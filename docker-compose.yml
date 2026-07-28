@@ -1,0 +1,13 @@
+services:
+  resume-designer:
+    build: .
+    container_name: resume-designer
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      GIGACHAT_USE_STUB: "true"
+    volumes:
+      - ./app/prompts:/app/app/prompts:ro
+    restart: unless-stopped
