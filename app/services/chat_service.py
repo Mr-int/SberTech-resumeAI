@@ -12,6 +12,7 @@ from app.domain.models.resume import ResumeDocument, ResumeSectionContent
 from app.integrations.gigachat.client import GigaChatClient
 from app.integrations.gigachat.models import GigaChatCompletionRequest, GigaChatMessage
 from app.services.prompt_service import PromptService
+from app.services.session_store import STORE
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +112,20 @@ class ChatService:
 
         recommendations = self._resume.parse_recommendations_stub(completion.content)
 
+        # persist conversation into session store for demo / future extraction
+        try:
+            STORE.append_message(request.session_id, "user", request.message.text)
+            STORE.append_message(request.session_id, "assistant", completion.content)
+        except Exception:
+            logger.debug("Failed to persist session data", exc_info=True)
+
+        # extract follow-up questions from completion (simple heuristic: lines ending with '?')
+        followup_questions: list[str] = []
+        for line in completion.content.splitlines():
+            line = line.strip()
+            if line.endswith('?') and len(line) > 3:
+                followup_questions.append(line)
+
         status = ProcessingStatus.STUB_RESPONSE if completion.stub else ProcessingStatus.SUCCESS
 
         return ChatResponse(
@@ -121,6 +136,7 @@ class ChatService:
                 intent=intent,
                 recommendations=recommendations,
                 resume_draft=request.resume,
+                followup_questions=followup_questions,
             ),
             model=completion.model,
             stub=completion.stub,

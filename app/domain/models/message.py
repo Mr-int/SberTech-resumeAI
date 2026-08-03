@@ -53,6 +53,7 @@ class AssistantReply(BaseModel):
     intent: MessageIntent = MessageIntent.UNKNOWN
     recommendations: list[RecommendationItem] = Field(default_factory=list)
     resume_draft: ResumePayload | None = None
+    followup_questions: list[str] = Field(default_factory=list)
 
 
 class ChatResponse(BaseModel):

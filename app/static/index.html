@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Resume Designer — Demo</title>
+  <style>
+    :root{--bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
+    html,body{height:100%}
+    body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:#071026;color:#e6eef8;margin:0;display:flex;align-items:flex-start;justify-content:center;padding:32px}
+    .container{max-width:980px;width:100%;display:grid;grid-template-columns:1fr 380px;gap:24px}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:20px;box-shadow:0 6px 24px rgba(2,6,23,0.6);display:flex;flex-direction:column;}
+    h1{margin:0 0 8px 0;font-size:20px}
+    p.lead{color:var(--muted);margin:0 0 16px}
+    textarea{width:100%;min-height:120px;background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:12px;border-radius:8px;resize:vertical}
+    .small{font-size:13px;color:var(--muted)}
+    .controls{display:flex;gap:8px;margin-top:12px}
+    button#send{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
+    button#send:active{transform:translateY(1px)}
+    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:16px;border-radius:10px}
+    .reply{white-space:pre-wrap;background:transparent;padding:12px;border-radius:6px;margin-top:8px;border:1px dashed rgba(255,255,255,0.03);min-height:120px;max-height:none;overflow:visible}
+    .meta{display:flex;align-items:center;gap:12px}
+    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
+    .right{display:flex;flex-direction:column;gap:12px;overflow:auto}
+    footer{grid-column:1/-1;color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
+    @media (max-width:900px){.container{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <div class="meta">
+        <div class="logo">RD</div>
+        <div>
+          <h1>Resume Designer — демо тест</h1>
+          <p class="lead">Введите сообщение ассистенту — система выполнит автоматический анализ резюме и сформирует персональные рекомендации.</p>
+        </div>
+      </div>
+
+      <div style="margin-top:14px">
+        <label class="small">Сообщение пользователя</label>
+        <textarea id="userText">Проанализируй моё резюме и дай рекомендации.</textarea>
+      </div>
+
+      <div style="margin-top:12px">
+        <label class="small">Черновик резюме (опционально)</label>
+        <textarea id="resumeText" placeholder="Тут можно вставить текст резюме"></textarea>
+      </div>
+
+      <div class="controls">
+        <button id="send">Отправить</button>
+        <div style="align-self:center;color:var(--muted);font-size:13px">Демо‑режим — демонстрация анализа</div>
+      </div>
+
+      <h2 style="margin-top:18px;font-size:16px">Ответ</h2>
+      <div id="status" class="small" style="margin-bottom:6px"></div>
+      <div id="reply" class="reply panel"></div>
+    </div>
+
+    <aside class="card right">
+      <div class="panel">
+        <strong>Как это работает</strong>
+        <p class="small" style="margin:8px 0 0">Resume Designer выполняет предобработку текста, выделяет ключевые навыки и достижения, формирует структурированные рекомендации и улучшенные формулировки. При доработке опыта ассистент ориентируется на структуру HH и просит/оформляет количественные результаты и влияние на метрики. Если данных недостаточно — запускается короткое «интервью от ИИ» для уточнения деталей перед составлением финального черновика.</p>
+      </div>
+
+      <div class="panel">
+        <strong>Подсказки</strong>
+        <ul class="small" style="margin:8px 0 0;padding-left:18px">
+          <li>Уточните целевую должность.</li>
+          <li>Добавьте количественные достижения в опыт.</li>
+          <li>Можно вставить текст резюме в поле справа.</li>
+        </ul>
+      </div>
+    </aside>
+
+    
+  </div>
+
+  <script>
+    async function send() {
+      const text = document.getElementById('userText').value.trim();
+      const resumeText = document.getElementById('resumeText').value.trim();
+      const statusEl = document.getElementById('status');
+      const replyEl = document.getElementById('reply');
+      statusEl.textContent = 'Отправка...';
+      replyEl.textContent = '';
+
+      const body = {
+        message: { text },
+      };
+      if (resumeText) body.resume = { raw_text: resumeText };
+
+      try {
+        const res = await fetch('/api/v1/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const data = await res.json();
+        statusEl.textContent = data.stub ? 'Заглушка (stub)' : 'Ответ от модели';
+        // show assistant text
+        replyEl.textContent = data.reply?.text || JSON.stringify(data, null, 2);
+
+        // if assistant provided follow-up questions, render form to answer them
+        const questions = data.reply?.followup_questions || [];
+        const existingForm = document.getElementById('followup-form');
+        if (existingForm) existingForm.remove();
+        if (questions.length) {
+          const form = document.createElement('div');
+          form.id = 'followup-form';
+          form.style.marginTop = '12px';
+          form.innerHTML = '<h3 style="margin:6px 0">Уточняющие вопросы</h3>';
+          questions.forEach((q, idx) => {
+            const qDiv = document.createElement('div');
+            qDiv.style.marginTop = '8px';
+            qDiv.innerHTML = `<div class="small">${q}</div><textarea id="q-${idx}" style="width:100%;min-height:64px;margin-top:6px"></textarea>`;
+            form.appendChild(qDiv);
+          });
+          const submit = document.createElement('button');
+          submit.textContent = 'Отправить ответы';
+          submit.style.marginTop = '10px';
+          submit.onclick = async () => {
+            const answers = {};
+            questions.forEach((q, idx) => {
+              const val = document.getElementById(`q-${idx}`).value.trim();
+              answers[q] = val;
+            });
+            const interviewPayload = {
+              session_id: data.session_id,
+              answers,
+              resume: body.resume || null,
+            };
+            statusEl.textContent = 'Отправка ответов...';
+            try {
+              const r2 = await fetch('/api/v1/interview', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(interviewPayload),
+              });
+              const data2 = await r2.json();
+              statusEl.textContent = data2.stub ? 'Заглушка (stub)' : 'Ответ от модели';
+              replyEl.textContent = data2.reply?.text || JSON.stringify(data2, null, 2);
+              // remove form after answers
+              form.remove();
+            } catch (err) {
+              statusEl.textContent = 'Ошибка: ' + err.message;
+            }
+          };
+          form.appendChild(submit);
+          replyEl.parentNode.insertBefore(form, replyEl.nextSibling);
+        }
+      } catch (err) {
+        statusEl.textContent = 'Ошибка: ' + err.message;
+      }
+    }
+
+    document.getElementById('send').addEventListener('click', send);
+  </script>
+</body>
+</html>
