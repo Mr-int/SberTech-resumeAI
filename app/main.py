@@ -5,7 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
-from app.api.routes import chat, health, interview
+from app.api.routes import chat, health, interview, session
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.modules.block1_resume_constructor.router import router as block1_router
@@ -41,6 +41,7 @@ def create_app() -> FastAPI:
     app.include_router(chat, prefix="/api/v1")
     app.include_router(block1_router, prefix="/api/v1")
     app.include_router(interview, prefix="/api/v1")
+    app.include_router(session, prefix="/session")
 
     # Mount a small static site (site-визитка) to demonstrate functionality
     app.mount("/site", StaticFiles(directory="app/static", html=True), name="site")

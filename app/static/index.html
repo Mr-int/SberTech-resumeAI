@@ -15,8 +15,11 @@
     textarea{width:100%;min-height:120px;background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:12px;border-radius:8px;resize:vertical}
     .small{font-size:13px;color:var(--muted)}
     .controls{display:flex;gap:8px;margin-top:12px}
-    button#send{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white;border:0;padding:10px 14px;border-radius:10px;cursor:pointer}
-    button#send:active{transform:translateY(1px)}
+    button#send, button#reset{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;transition:transform .15s ease, background .15s ease;}
+    button#send:hover, button#reset:hover{background:linear-gradient(90deg,#8b5cf6,#2563eb);}
+    button#send:active, button#reset:active{transform:translateY(1px)}
+    button#reset{background:transparent;color:var(--accent);border:1px solid rgba(124,58,237,0.5);}
+    button#reset:hover{background:rgba(124,58,237,0.12);}
     .panel{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:16px;border-radius:10px}
     .reply{white-space:pre-wrap;background:transparent;padding:12px;border-radius:6px;margin-top:8px;border:1px dashed rgba(255,255,255,0.03);min-height:120px;max-height:none;overflow:visible}
     .meta{display:flex;align-items:center;gap:12px}
@@ -49,6 +52,7 @@
 
       <div class="controls">
         <button id="send">Отправить</button>
+        <button id="reset">Сбросить диалог</button>
         <div style="align-self:center;color:var(--muted);font-size:13px">Демо‑режим — демонстрация анализа</div>
       </div>
 
@@ -77,6 +81,8 @@
   </div>
 
   <script>
+    let currentSessionId = null;
+
     async function send() {
       const text = document.getElementById('userText').value.trim();
       const resumeText = document.getElementById('resumeText').value.trim();
@@ -96,7 +102,21 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(body),
         });
-        const data = await res.json();
+
+        let data = null;
+        try {
+            data = await res.clone().json();
+        } catch (e) {
+          // Non-JSON response — show raw text for easier debugging
+            const txt = await res.clone().text();
+          statusEl.textContent = `Ошибка сервера: ${res.status} ${res.statusText}`;
+          replyEl.textContent = txt;
+          return;
+        }
+
+        // store session id for follow-up/interview/reset actions
+        currentSessionId = data.session_id;
+
         statusEl.textContent = data.stub ? 'Заглушка (stub)' : 'Ответ от модели';
         // show assistant text
         replyEl.textContent = data.reply?.text || JSON.stringify(data, null, 2);
@@ -126,7 +146,7 @@
               answers[q] = val;
             });
             const interviewPayload = {
-              session_id: data.session_id,
+              session_id: currentSessionId || data.session_id,
               answers,
               resume: body.resume || null,
             };
@@ -137,7 +157,17 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(interviewPayload),
               });
-              const data2 = await r2.json();
+                let data2 = null;
+                try {
+                  data2 = await r2.json();
+                } catch (parseErr) {
+                  const txt2 = await r2.clone().text();
+                  statusEl.textContent = `Ошибка сервера: ${r2.status} ${r2.statusText}`;
+                  replyEl.textContent = txt2;
+                  return;
+                }
+              // update current session id from interview response
+              currentSessionId = data2.session_id || currentSessionId;
               statusEl.textContent = data2.stub ? 'Заглушка (stub)' : 'Ответ от модели';
               replyEl.textContent = data2.reply?.text || JSON.stringify(data2, null, 2);
               // remove form after answers
@@ -155,6 +185,35 @@
     }
 
     document.getElementById('send').addEventListener('click', send);
+    document.getElementById('reset').addEventListener('click', async () => {
+      const statusEl = document.getElementById('status');
+      const replyEl = document.getElementById('reply');
+      if (!currentSessionId) {
+        statusEl.textContent = 'Нет активной сессии для сброса';
+        return;
+      }
+      statusEl.textContent = 'Сброс...';
+      try {
+        const r = await fetch('/session/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: currentSessionId }),
+        });
+        if (!r.ok) {
+          const txt = await r.clone().text();
+          statusEl.textContent = `Ошибка: ${r.status} ${r.statusText}`;
+          replyEl.textContent = txt;
+          return;
+        }
+        // clear UI
+        replyEl.textContent = '';
+        const existingForm = document.getElementById('followup-form');
+        if (existingForm) existingForm.remove();
+        statusEl.textContent = 'Сессия сброшена';
+      } catch (err) {
+        statusEl.textContent = 'Ошибка: ' + err.message;
+      }
+    });
   </script>
 </body>
 </html>

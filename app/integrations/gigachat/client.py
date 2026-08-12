@@ -17,7 +17,8 @@ class GigaChatClient:
         self._auth = auth or GigaChatAuth(settings)
 
     async def complete(self, request: GigaChatCompletionRequest) -> GigaChatCompletionResponse:
-        if self._settings.gigachat_use_stub:
+        # If GigaChat is not active (not configured or stub mode), return stub response
+        if not self._settings.gigachat_active:
             return self._stub_complete(request)
 
         token = await self._auth.get_access_token()
@@ -29,7 +30,14 @@ class GigaChatClient:
         }
 
         # TODO (≈6ч): обработка rate limit, retry, таймауты, streaming
-        async with httpx.AsyncClient(verify=True, timeout=60.0) as client:
+        # Respect settings: if a CA bundle is provided, pass its path; otherwise use boolean verify flag
+        verify_param = (
+            self._settings.gigachat_ca_bundle
+            if getattr(self._settings, "gigachat_ca_bundle", None)
+            else getattr(self._settings, "gigachat_verify_ssl", True)
+        )
+
+        async with httpx.AsyncClient(verify=verify_param, timeout=60.0) as client:
             response = await client.post(url, headers=headers, json=request.model_dump())
             response.raise_for_status()
             data = response.json()

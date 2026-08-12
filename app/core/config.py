@@ -18,12 +18,40 @@ class Settings(BaseSettings):
     gigachat_auth_url: str = "https://ngw.devices.sberbank.ru:9443/api/v2/oauth"
     gigachat_api_url: str = "https://gigachat.devices.sberbank.ru/api/v1"
     gigachat_use_stub: bool = True
+    # При наличии ключа можно использовать простой Bearer токен вместо OAuth
+    gigachat_api_key: str = ""
+    # Если у вас уже есть готовый Basic ключ (base64(client_id:client_secret)),
+    # можно задать его напрямую вместо client_id/client_secret
+    gigachat_auth_basic: str = ""
+    # Более удобное имя для переданного base64(client_id:client_secret)
+    gigachat_auth_key: str = ""
+    # Более удобное имя для переданного base64(client_id:client_secret)
+    gigachat_auth_key: str = ""
+    # SSL validation settings for internal GigaChat endpoint (useful for corporate/self-signed certs)
+    gigachat_verify_ssl: bool = True
+    # If set, path to a CA bundle file to use for verification (overrides gigachat_verify_ssl)
+    gigachat_ca_bundle: str = ""
 
     messenger_webhook_secret: str = ""
 
     @property
     def gigachat_configured(self) -> bool:
-        return bool(self.gigachat_client_id and self.gigachat_client_secret)
+        # Конфигурирован, если задано либо API-ключ (bearer), либо OAuth creds (client id+secret),
+        # либо заранее подготовленный Basic/key (gigachat_auth_basic или gigachat_auth_key).
+        return bool(
+            self.gigachat_api_key
+            or self.gigachat_auth_key
+            or self.gigachat_auth_basic
+            or (self.gigachat_client_id and self.gigachat_client_secret)
+        )
+
+    @property
+    def gigachat_active(self) -> bool:
+        """True когда GigaChat должен использоваться (сконфигурирован и не в stub режиме)."""
+        # Если явно указан API-ключ — используем реальный режим независимо от флага stub
+        if self.gigachat_api_key:
+            return True
+        return bool(self.gigachat_configured and not self.gigachat_use_stub)
 
 
 @lru_cache

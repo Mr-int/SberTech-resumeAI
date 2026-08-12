@@ -26,6 +26,7 @@ async def submit_interview(
     chat_req = ChatRequest(session_id=payload.session_id, message=message, resume=payload.resume)
     try:
         response = await service.process(chat_req)
-        return response
+        # return a JSON-serializable dict to satisfy FastAPI response validation
+        return response.model_dump()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

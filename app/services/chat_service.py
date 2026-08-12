@@ -10,6 +10,7 @@ from app.domain.models.message import (
 )
 from app.domain.models.resume import ResumeDocument, ResumeSectionContent
 from app.integrations.gigachat.client import GigaChatClient
+import httpx
 from app.integrations.gigachat.models import GigaChatCompletionRequest, GigaChatMessage
 from app.services.prompt_service import PromptService
 from app.services.session_store import STORE
@@ -101,14 +102,48 @@ class ChatService:
             resume_context=resume_context,
         )
 
-        completion = await self._gigachat.complete(
-            GigaChatCompletionRequest(
-                messages=[
-                    GigaChatMessage(role="system", content=self._prompts.get_system_prompt()),
-                    GigaChatMessage(role="user", content=user_prompt),
-                ]
+        # Build message sequence: system -> previous session messages -> current user prompt
+        messages = [GigaChatMessage(role="system", content=self._prompts.get_system_prompt())]
+        # include prior messages from session store to preserve context
+        try:
+            session_data = STORE.get(request.session_id)
+            if session_data and session_data.get("messages"):
+                for m in session_data.get("messages", []):
+                    # expect stored messages as dicts with 'role' and 'content'
+                    messages.append(GigaChatMessage(role=m.get("role", "user"), content=m.get("content", "")))
+        except Exception:
+            logger.debug("Failed to read session store for context", exc_info=True)
+
+        # finally add the current user prompt
+        messages.append(GigaChatMessage(role="user", content=user_prompt))
+
+        try:
+            completion = await self._gigachat.complete(GigaChatCompletionRequest(messages=messages))
+        
+        except Exception as e:
+            logger.exception("GigaChat request failed")
+            # Try to extract upstream response body for debugging
+            upstream_text = None
+            if isinstance(e, httpx.HTTPStatusError) and getattr(e, "response", None) is not None:
+                try:
+                    upstream_text = e.response.text
+                except Exception:
+                    upstream_text = None
+
+            detail = upstream_text or str(e)
+
+            reply_text = (
+                "Ошибка при обращении к GigaChat: " + detail
             )
-        )
+
+            return ChatResponse(
+                session_id=request.session_id,
+                status=ProcessingStatus.UPSTREAM_ERROR,
+                reply=AssistantReply(text=reply_text, intent=intent),
+                model="n/a",
+                stub=False,
+                debug={"error": str(e)},
+            )
 
         recommendations = self._resume.parse_recommendations_stub(completion.content)
 
