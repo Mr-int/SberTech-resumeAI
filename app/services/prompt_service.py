@@ -29,6 +29,9 @@ class PromptService:
     def get_system_prompt(self) -> str:
         return self.load("system")["template"].strip()
 
+    def get_resume_structure(self) -> str:
+        return self.load("hh_resume_structure")["template"].strip()
+
     def build_user_prompt(
         self,
         intent: MessageIntent,
@@ -38,17 +41,30 @@ class PromptService:
         target_role: str | None = None,
         resume_context: str | None = None,
     ) -> str:
+        structure = self.get_resume_structure()
+
         if intent == MessageIntent.ANALYZE_RESUME:
             template = self.load("resume_analysis")["template"]
             return self._simple_render(
                 template,
+                resume_structure=structure,
                 target_role=target_role or "не указана",
                 resume_text=resume_text or user_message,
+            )
+
+        if intent == MessageIntent.CREATE_RESUME:
+            template = self.load("resume_creation")["template"]
+            return self._simple_render(
+                template,
+                resume_structure=structure,
+                user_message=user_message,
+                resume_context=resume_context or "",
             )
 
         template = self.load("resume_creation")["template"]
         return self._simple_render(
             template,
+            resume_structure=structure,
             user_message=user_message,
             resume_context=resume_context or "",
         )

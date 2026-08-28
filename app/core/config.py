@@ -23,10 +23,10 @@ class Settings(BaseSettings):
     # Если у вас уже есть готовый Basic ключ (base64(client_id:client_secret)),
     # можно задать его напрямую вместо client_id/client_secret
     gigachat_auth_basic: str = ""
-    # Более удобное имя для переданного base64(client_id:client_secret)
     gigachat_auth_key: str = ""
-    # Более удобное имя для переданного base64(client_id:client_secret)
-    gigachat_auth_key: str = ""
+    gigachat_model: str = "GigaChat"
+    gigachat_model_light: str = "GigaChat-2"
+    gigachat_model_heavy: str = "GigaChat-2-Pro"
     # SSL validation settings for internal GigaChat endpoint (useful for corporate/self-signed certs)
     gigachat_verify_ssl: bool = True
     # If set, path to a CA bundle file to use for verification (overrides gigachat_verify_ssl)
@@ -48,10 +48,11 @@ class Settings(BaseSettings):
     @property
     def gigachat_active(self) -> bool:
         """True когда GigaChat должен использоваться (сконфигурирован и не в stub режиме)."""
-        # Если явно указан API-ключ — используем реальный режим независимо от флага stub
+        if not self.gigachat_configured:
+            return False
         if self.gigachat_api_key:
             return True
-        return bool(self.gigachat_configured and not self.gigachat_use_stub)
+        return not self.gigachat_use_stub
 
 
 @lru_cache

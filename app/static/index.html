@@ -1,219 +1,1243 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Resume Designer — Demo</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Resume Designer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
   <style>
-    :root{--bg:#0f1724;--card:#0b1220;--accent:#7c3aed;--muted:#94a3b8;--glass:rgba(255,255,255,0.04)}
-    html,body{height:100%}
-    body{font-family:Inter,system-ui,Arial,Helvetica,sans-serif;background:#071026;color:#e6eef8;margin:0;display:flex;align-items:flex-start;justify-content:center;padding:32px}
-    .container{max-width:980px;width:100%;display:grid;grid-template-columns:1fr 380px;gap:24px}
-    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:12px;padding:20px;box-shadow:0 6px 24px rgba(2,6,23,0.6);display:flex;flex-direction:column;}
-    h1{margin:0 0 8px 0;font-size:20px}
-    p.lead{color:var(--muted);margin:0 0 16px}
-    textarea{width:100%;min-height:120px;background:var(--glass);border:1px solid rgba(255,255,255,0.04);color:inherit;padding:12px;border-radius:8px;resize:vertical}
-    .small{font-size:13px;color:var(--muted)}
-    .controls{display:flex;gap:8px;margin-top:12px}
-    button#send, button#reset{background:linear-gradient(90deg,var(--accent),#4f46e5);color:white;border:0;padding:10px 14px;border-radius:10px;cursor:pointer;transition:transform .15s ease, background .15s ease;}
-    button#send:hover, button#reset:hover{background:linear-gradient(90deg,#8b5cf6,#2563eb);}
-    button#send:active, button#reset:active{transform:translateY(1px)}
-    button#reset{background:transparent;color:var(--accent);border:1px solid rgba(124,58,237,0.5);}
-    button#reset:hover{background:rgba(124,58,237,0.12);}
-    .panel{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.02));padding:16px;border-radius:10px}
-    .reply{white-space:pre-wrap;background:transparent;padding:12px;border-radius:6px;margin-top:8px;border:1px dashed rgba(255,255,255,0.03);min-height:120px;max-height:none;overflow:visible}
-    .meta{display:flex;align-items:center;gap:12px}
-    .logo{width:44px;height:44px;border-radius:8px;background:linear-gradient(135deg,var(--accent),#06b6d4);display:flex;align-items:center;justify-content:center;font-weight:700;color:white}
-    .right{display:flex;flex-direction:column;gap:12px;overflow:auto}
-    footer{grid-column:1/-1;color:var(--muted);text-align:center;margin-top:12px;font-size:13px}
-    @media (max-width:900px){.container{grid-template-columns:1fr;}}
+    :root {
+      --bg: #f4f1ec;
+      --bg-accent: #ebe6de;
+      --surface: #ffffff;
+      --surface-raised: #faf8f5;
+      --ink: #1c1917;
+      --ink-soft: #44403c;
+      --muted: #78716c;
+      --accent: #2c4a3e;
+      --accent-hover: #1f362c;
+      --accent-soft: #e8f0ec;
+      --line: #e7e2db;
+      --line-strong: #d6d0c8;
+      --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.04);
+      --shadow-md: 0 8px 24px rgba(28, 25, 23, 0.06);
+      --radius-sm: 10px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --font-ui: "DM Sans", system-ui, sans-serif;
+      --font-display: "Newsreader", Georgia, serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+      font-family: var(--font-ui);
+      font-size: 15px;
+      line-height: 1.55;
+      min-height: 100vh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(ellipse 80% 50% at 100% 0%, rgba(44, 74, 62, 0.07), transparent 55%),
+        radial-gradient(ellipse 60% 40% at 0% 100%, rgba(120, 113, 108, 0.06), transparent 50%);
+      z-index: -1;
+    }
+
+    .wrap {
+      width: min(880px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 40px 0 48px;
+    }
+
+    header {
+      margin-bottom: 28px;
+      padding-bottom: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.75rem, 4vw, 2.35rem);
+      font-weight: 500;
+      color: var(--ink);
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 10px;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1rem;
+      max-width: 34rem;
+      line-height: 1.6;
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: clamp(22px, 4vw, 32px);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-head {
+      margin-bottom: 24px;
+    }
+
+    .panel h2 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 500;
+      color: var(--ink);
+      margin-bottom: 6px;
+      letter-spacing: -0.01em;
+    }
+
+    .panel > p.sub,
+    .panel-head p.sub {
+      color: var(--muted);
+      font-size: 0.9375rem;
+      line-height: 1.5;
+    }
+
+    .mode-tabs {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .mode-tab {
+      position: relative;
+      border: 1px solid var(--line);
+      background: var(--surface-raised);
+      color: var(--muted);
+      border-radius: var(--radius-md);
+      padding: 16px 18px 16px 20px;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+
+    .mode-tab::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 12px;
+      bottom: 12px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: transparent;
+      transition: background 0.18s ease;
+    }
+
+    .mode-tab:hover {
+      border-color: var(--line-strong);
+      background: var(--surface);
+    }
+
+    .mode-tab strong {
+      display: block;
+      color: var(--ink);
+      font-size: 0.9375rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .mode-tab span {
+      font-size: 0.8125rem;
+      line-height: 1.45;
+    }
+
+    .mode-tab.active {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .mode-tab.active::before {
+      background: var(--accent);
+    }
+
+    .mode-tab.active strong { color: var(--accent); }
+    .mode-tab.active span { color: var(--ink-soft); }
+
+    .field { display: flex; flex-direction: column; gap: 7px; margin-bottom: 16px; }
+
+    .field label {
+      color: var(--ink-soft);
+      font-size: 0.8125rem;
+      font-weight: 600;
+    }
+
+    textarea,
+    input[type="text"] {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+      background: var(--surface);
+      color: var(--ink);
+      padding: 12px 14px;
+      font: inherit;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    textarea::placeholder,
+    input::placeholder {
+      color: #a8a29e;
+    }
+
+    textarea { min-height: 110px; resize: vertical; }
+    #resumeText { min-height: 168px; }
+
+    textarea:focus,
+    input[type="text"]:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(44, 74, 62, 0.12);
+    }
+
+    .file-upload {
+      position: relative;
+    }
+
+    .file-input-hidden {
+      position: absolute;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .file-picker {
+      border: 1px dashed var(--line-strong);
+      border-radius: var(--radius-sm);
+      background: var(--surface-raised);
+      padding: 14px 16px;
+      transition: border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    .file-picker:hover {
+      border-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    .file-picker.has-file {
+      border-style: solid;
+      border-color: #c5d9ce;
+      background: var(--accent-soft);
+    }
+
+    .file-picker-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+
+    .file-picker-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .file-picker-icon {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-sm);
+      background: var(--surface);
+      border: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+    }
+
+    .file-picker-icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 1.75;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .file-picker-text {
+      min-width: 0;
+    }
+
+    .file-picker-name {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.35;
+    }
+
+    .file-picker-hint {
+      display: block;
+      font-size: 0.8125rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .file-picker.has-file .file-picker-name {
+      color: var(--accent);
+    }
+
+    .file-picker-btn {
+      flex-shrink: 0;
+    }
+
+    .file-meta {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      margin-top: 2px;
+    }
+
+    .wizard {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      background: var(--surface-raised);
+      margin-bottom: 16px;
+    }
+
+    .wizard-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .wizard-head h3 {
+      font-family: var(--font-display);
+      font-size: 1.125rem;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .wizard-progress {
+      color: var(--muted);
+      font-size: 0.75rem;
+      font-weight: 500;
+      white-space: nowrap;
+      padding: 4px 10px;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .wizard-dots {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 16px;
+    }
+
+    .wizard-dot {
+      flex: 1;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--line);
+    }
+
+    .wizard-dot.done { background: #9cb5a8; }
+    .wizard-dot.active { background: var(--accent); }
+
+    .wizard-nav {
+      display: flex;
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+  /* —— Buttons —— */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      padding: 10px 16px;
+      font: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      line-height: 1.2;
+      cursor: pointer;
+      transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+      white-space: nowrap;
+    }
+
+    .btn:active:not(:disabled) {
+      transform: translateY(1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 3px rgba(44, 74, 62, 0.2);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      border-color: var(--accent);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--ink-soft);
+      border-color: var(--line-strong);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--surface-raised);
+      border-color: var(--muted);
+      color: var(--ink);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--muted);
+      border-color: transparent;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--bg-accent);
+      color: var(--ink-soft);
+    }
+
+    .btn-sm {
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin: 22px 0 12px;
+      padding-top: 20px;
+      border-top: 1px solid var(--line);
+    }
+
+    .status {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      margin-bottom: 14px;
+      min-height: 1.2em;
+    }
+
+    .status:not(:empty) {
+      padding: 8px 12px;
+      background: var(--surface-raised);
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--line);
+    }
+
+    .reply-shell {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-md);
+      background: var(--surface);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+    }
+
+    .reply-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: var(--surface-raised);
+    }
+
+    .reply-header h3 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .reply-meta {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+    }
+
+    .badge {
+      font-size: 0.6875rem;
+      font-weight: 600;
+      padding: 4px 9px;
+      border-radius: 6px;
+      border: 1px solid var(--line);
+      color: var(--muted);
+      background: var(--surface);
+      letter-spacing: 0.02em;
+    }
+
+    .badge.accent {
+      color: var(--accent);
+      border-color: #c5d9ce;
+      background: var(--accent-soft);
+    }
+
+    .reply-body {
+      max-height: 520px;
+      overflow: auto;
+      padding: 20px 22px 24px;
+      color: var(--ink-soft);
+      font-size: 0.9375rem;
+      line-height: 1.65;
+    }
+
+    .reply-body.empty {
+      color: var(--muted);
+      min-height: 160px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 28px;
+      background: repeating-linear-gradient(
+        -45deg,
+        transparent,
+        transparent 8px,
+        rgba(231, 226, 219, 0.35) 8px,
+        rgba(231, 226, 219, 0.35) 9px
+      );
+    }
+
+    .reply-body.empty::before {
+      content: "Ответ появится здесь";
+      font-size: 0.9375rem;
+    }
+
+    .reply-body h4 {
+      font-family: var(--font-display);
+      color: var(--ink);
+      font-size: 1.05rem;
+      font-weight: 500;
+      margin: 20px 0 8px;
+    }
+
+    .reply-body h4:first-child { margin-top: 0; }
+
+    .reply-body p { margin: 0 0 12px; }
+
+    .reply-body ul,
+    .reply-body ol {
+      margin: 0 0 14px 1.25rem;
+    }
+
+    .reply-body li { margin-bottom: 6px; }
+
+    .reply-body strong {
+      color: var(--ink);
+      font-weight: 600;
+    }
+
+    .reply-body code {
+      background: var(--bg-accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.85em;
+      color: var(--ink-soft);
+    }
+
+    .followup-box {
+      border-top: 1px solid var(--line);
+      padding: 18px 20px;
+      background: var(--accent-soft);
+    }
+
+    .followup-box h4 {
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: var(--accent);
+      margin-bottom: 14px;
+    }
+
+    .followup-item { margin-bottom: 14px; }
+
+    .followup-item label {
+      display: block;
+      color: var(--ink-soft);
+      font-size: 0.875rem;
+      margin-bottom: 6px;
+      line-height: 1.45;
+    }
+
+    .followup-item textarea { min-height: 72px; }
+
+    .followup-actions {
+      margin-top: 4px;
+    }
+
+    .site-footer {
+      margin-top: 32px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .wrap { padding-top: 24px; }
+      .mode-tabs { grid-template-columns: 1fr; }
+      .reply-header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .controls {
+        flex-direction: column;
+        align-items: stretch;
+      }
+      .controls .btn { width: 100%; }
+    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <div class="card">
-      <div class="meta">
-        <div class="logo">RD</div>
-        <div>
-          <h1>Resume Designer — демо тест</h1>
-          <p class="lead">Введите сообщение ассистенту — система выполнит автоматический анализ резюме и сформирует персональные рекомендации.</p>
+  <div class="wrap">
+    <header>
+      <h1>Готовое резюме</h1>
+      <p class="lead">Загрузите текст или пройдите короткую анкету — получите разбор или черновик.</p>
+    </header>
+
+    <section class="panel" id="demo">
+      <div class="panel-head">
+        <h2>Рабочая область</h2>
+        <p class="sub">Выберите сценарий и заполните поля ниже.</p>
+      </div>
+
+      <div class="mode-tabs">
+        <button type="button" class="mode-tab active" data-mode="analyze">
+          <strong>Анализ резюме</strong>
+          <span>Разбор по блокам HH и рекомендации</span>
+        </button>
+        <button type="button" class="mode-tab" data-mode="create">
+          <strong>Новое резюме</strong>
+          <span>Анкета → черновик по структуре hh.ru</span>
+        </button>
+      </div>
+
+      <div id="analyzePanel">
+        <div class="field file-upload">
+          <label for="resumePdf">PDF резюме</label>
+          <div class="file-picker" id="filePicker">
+            <input id="resumePdf" class="file-input-hidden" type="file" accept=".pdf,application/pdf">
+            <div class="file-picker-inner">
+              <div class="file-picker-info">
+                <div class="file-picker-icon" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M12 18v-6M9 15h6"/></svg>
+                </div>
+                <div class="file-picker-text">
+                  <span id="pdfMeta" class="file-picker-name">Файл не выбран</span>
+                  <span class="file-picker-hint">PDF, до 5 МБ — или вставьте текст ниже</span>
+                </div>
+              </div>
+              <label for="resumePdf" class="btn btn-secondary file-picker-btn">Выбрать файл</label>
+            </div>
+          </div>
+        </div>
+        <div class="field">
+          <label for="resumeText">Текст резюме</label>
+          <textarea id="resumeText" placeholder="Вставьте текст резюме или загрузите PDF"></textarea>
+        </div>
+        <div class="field">
+          <label for="analyzeNote">Дополнительный запрос (необязательно)</label>
+          <textarea id="analyzeNote" placeholder="Например: сфокусируйся на блоке «Опыт» и метриках"></textarea>
         </div>
       </div>
 
-      <div style="margin-top:14px">
-        <label class="small">Сообщение пользователя</label>
-        <textarea id="userText">Проанализируй моё резюме и дай рекомендации.</textarea>
-      </div>
-
-      <div style="margin-top:12px">
-        <label class="small">Черновик резюме (опционально)</label>
-        <textarea id="resumeText" placeholder="Тут можно вставить текст резюме"></textarea>
+      <div id="createPanel" class="hidden">
+        <div class="wizard">
+          <div class="wizard-head">
+            <h3 id="wizardTitle">Целевая должность</h3>
+            <div class="wizard-progress" id="wizardProgress">Шаг 1 из 5</div>
+          </div>
+          <div class="wizard-dots" id="wizardDots"></div>
+          <div class="field" style="margin-bottom:0">
+            <label id="wizardLabel" for="wizardInput">Какую должность вы ищете?</label>
+            <textarea id="wizardInput" rows="3" placeholder="Например: Junior Python-разработчик"></textarea>
+          </div>
+          <div class="wizard-nav">
+            <button type="button" class="btn btn-secondary" id="wizardPrev">Назад</button>
+            <button type="button" class="btn btn-secondary" id="wizardNext">Далее</button>
+          </div>
+        </div>
       </div>
 
       <div class="controls">
-        <button id="send">Отправить</button>
-        <button id="reset">Сбросить диалог</button>
-        <div style="align-self:center;color:var(--muted);font-size:13px">Демо‑режим — демонстрация анализа</div>
+        <button id="send" class="btn btn-primary" type="button">Отправить</button>
+        <button id="reset" class="btn btn-ghost" type="button">Сбросить</button>
       </div>
 
-      <h2 style="margin-top:18px;font-size:16px">Ответ</h2>
-      <div id="status" class="small" style="margin-bottom:6px"></div>
-      <div id="reply" class="reply panel"></div>
-    </div>
+      <div id="status" class="status"></div>
 
-    <aside class="card right">
-      <div class="panel">
-        <strong>Как это работает</strong>
-        <p class="small" style="margin:8px 0 0">Resume Designer выполняет предобработку текста, выделяет ключевые навыки и достижения, формирует структурированные рекомендации и улучшенные формулировки. При доработке опыта ассистент ориентируется на структуру HH и просит/оформляет количественные результаты и влияние на метрики. Если данных недостаточно — запускается короткое «интервью от ИИ» для уточнения деталей перед составлением финального черновика.</p>
+      <div class="reply-shell">
+        <div class="reply-header">
+          <h3>Результат</h3>
+          <div class="reply-meta">
+            <span id="replyBadge" class="badge hidden"></span>
+            <span id="replyModel" class="badge hidden"></span>
+            <button type="button" class="btn btn-secondary btn-sm" id="copyReply">Копировать</button>
+          </div>
+        </div>
+        <div id="reply" class="reply-body empty"></div>
+        <div id="followupBox" class="followup-box hidden"></div>
       </div>
+    </section>
 
-      <div class="panel">
-        <strong>Подсказки</strong>
-        <ul class="small" style="margin:8px 0 0;padding-left:18px">
-          <li>Уточните целевую должность.</li>
-          <li>Добавьте количественные достижения в опыт.</li>
-          <li>Можно вставить текст резюме в поле справа.</li>
-        </ul>
-      </div>
-    </aside>
-
-    
+    <p class="site-footer">СберTech · 2026</p>
   </div>
 
   <script>
+    gsap.registerPlugin(ScrollTrigger);
+    gsap.from("header", { opacity: 0, y: 24, duration: 0.8, ease: "power2.out" });
+    gsap.from(".panel", { opacity: 0, y: 32, duration: 0.85, delay: 0.15, ease: "power2.out" });
+
+    const WIZARD_STEPS = [
+      {
+        key: "personal_info",
+        title: "Личные данные",
+        label: "Возраст, дата рождения, семейное состояние",
+        placeholder: "39 лет (01.01.1987), высшее образование, в браке, есть дети",
+        required: false,
+      },
+      {
+        key: "location",
+        title: "Город и гражданство",
+        label: "Где вы живите и гражданство",
+        placeholder: "Москва. Гражданство: Россия",
+        required: true,
+      },
+      {
+        key: "target_position",
+        title: "Желаемая должность",
+        label: "Должность и ожидаемая зарплата",
+        placeholder: "Менеджер по продажам, 50 000 ₽",
+        required: true,
+      },
+      {
+        key: "work_experience",
+        title: "Опыт работы",
+        label: "Места работы: период, компания, обязанности и достижения с цифрами",
+        placeholder: "Январь 2011 – сейчас, ООО «Атрис», Москва. 70 звонков/день, +25% прибыли в 2016, 19 млн ₽ договоров...",
+        required: true,
+      },
+      {
+        key: "education",
+        title: "Образование",
+        label: "Уровень, год, вуз, факультет, специальность",
+        placeholder: "2009, ВАВТ, факультет внешнеторгового менеджмента, менеджмент, очная",
+        required: true,
+      },
+      {
+        key: "about_me",
+        title: "Обо мне",
+        label: "Сильные стороны, ключевые компетенции и навыки",
+        placeholder: "Коммуникабельность, активные продажи, работа с возражениями, клиентская база...",
+        required: false,
+      },
+      {
+        key: "languages",
+        title: "Языки и права",
+        label: "Иностранные языки и водительские права",
+        placeholder: "Английский — разговорный. Водительские права категории B",
+        required: false,
+      },
+    ];
+
+    let currentMode = "analyze";
     let currentSessionId = null;
+    let lastReplyText = "";
+    let wizardStep = 0;
+    const wizardAnswers = {};
 
-    async function send() {
-      const text = document.getElementById('userText').value.trim();
-      const resumeText = document.getElementById('resumeText').value.trim();
-      const statusEl = document.getElementById('status');
-      const replyEl = document.getElementById('reply');
-      statusEl.textContent = 'Отправка...';
-      replyEl.textContent = '';
+    const els = {
+      analyzePanel: document.getElementById("analyzePanel"),
+      createPanel: document.getElementById("createPanel"),
+      wizardTitle: document.getElementById("wizardTitle"),
+      wizardProgress: document.getElementById("wizardProgress"),
+      wizardDots: document.getElementById("wizardDots"),
+      wizardLabel: document.getElementById("wizardLabel"),
+      wizardInput: document.getElementById("wizardInput"),
+      wizardPrev: document.getElementById("wizardPrev"),
+      wizardNext: document.getElementById("wizardNext"),
+      status: document.getElementById("status"),
+      reply: document.getElementById("reply"),
+      followupBox: document.getElementById("followupBox"),
+      replyBadge: document.getElementById("replyBadge"),
+      replyModel: document.getElementById("replyModel"),
+    };
 
-      const body = {
-        message: { text },
+    function escapeHtml(text) {
+      return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    function renderReplyHtml(text) {
+      const lines = text.split("\n");
+      let html = "";
+      let inList = false;
+      let listType = "ul";
+
+      const closeList = () => {
+        if (inList) {
+          html += listType === "ul" ? "</ul>" : "</ol>";
+          inList = false;
+        }
       };
-      if (resumeText) body.resume = { raw_text: resumeText };
 
-      try {
-        const res = await fetch('/api/v1/chat', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(body),
-        });
-
-        let data = null;
-        try {
-            data = await res.clone().json();
-        } catch (e) {
-          // Non-JSON response — show raw text for easier debugging
-            const txt = await res.clone().text();
-          statusEl.textContent = `Ошибка сервера: ${res.status} ${res.statusText}`;
-          replyEl.textContent = txt;
-          return;
+      for (const raw of lines) {
+        const line = raw.trim();
+        if (!line) {
+          closeList();
+          continue;
         }
 
-        // store session id for follow-up/interview/reset actions
-        currentSessionId = data.session_id;
-
-        statusEl.textContent = data.stub ? 'Заглушка (stub)' : 'Ответ от модели';
-        // show assistant text
-        replyEl.textContent = data.reply?.text || JSON.stringify(data, null, 2);
-
-        // if assistant provided follow-up questions, render form to answer them
-        const questions = data.reply?.followup_questions || [];
-        const existingForm = document.getElementById('followup-form');
-        if (existingForm) existingForm.remove();
-        if (questions.length) {
-          const form = document.createElement('div');
-          form.id = 'followup-form';
-          form.style.marginTop = '12px';
-          form.innerHTML = '<h3 style="margin:6px 0">Уточняющие вопросы</h3>';
-          questions.forEach((q, idx) => {
-            const qDiv = document.createElement('div');
-            qDiv.style.marginTop = '8px';
-            qDiv.innerHTML = `<div class="small">${q}</div><textarea id="q-${idx}" style="width:100%;min-height:64px;margin-top:6px"></textarea>`;
-            form.appendChild(qDiv);
-          });
-          const submit = document.createElement('button');
-          submit.textContent = 'Отправить ответы';
-          submit.style.marginTop = '10px';
-          submit.onclick = async () => {
-            const answers = {};
-            questions.forEach((q, idx) => {
-              const val = document.getElementById(`q-${idx}`).value.trim();
-              answers[q] = val;
-            });
-            const interviewPayload = {
-              session_id: currentSessionId || data.session_id,
-              answers,
-              resume: body.resume || null,
-            };
-            statusEl.textContent = 'Отправка ответов...';
-            try {
-              const r2 = await fetch('/api/v1/interview', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(interviewPayload),
-              });
-                let data2 = null;
-                try {
-                  data2 = await r2.json();
-                } catch (parseErr) {
-                  const txt2 = await r2.clone().text();
-                  statusEl.textContent = `Ошибка сервера: ${r2.status} ${r2.statusText}`;
-                  replyEl.textContent = txt2;
-                  return;
-                }
-              // update current session id from interview response
-              currentSessionId = data2.session_id || currentSessionId;
-              statusEl.textContent = data2.stub ? 'Заглушка (stub)' : 'Ответ от модели';
-              replyEl.textContent = data2.reply?.text || JSON.stringify(data2, null, 2);
-              // remove form after answers
-              form.remove();
-            } catch (err) {
-              statusEl.textContent = 'Ошибка: ' + err.message;
-            }
-          };
-          form.appendChild(submit);
-          replyEl.parentNode.insertBefore(form, replyEl.nextSibling);
+        if (/^#{1,3}\s+/.test(line)) {
+          closeList();
+          html += `<h4>${escapeHtml(line.replace(/^#{1,3}\s+/, ""))}</h4>`;
+          continue;
         }
-      } catch (err) {
-        statusEl.textContent = 'Ошибка: ' + err.message;
+
+        if (/^(\d+)[.)]\s+/.test(line)) {
+          if (!inList || listType !== "ol") {
+            closeList();
+            html += "<ol>";
+            inList = true;
+            listType = "ol";
+          }
+          html += `<li>${formatInline(line.replace(/^(\d+)[.)]\s+/, ""))}</li>`;
+          continue;
+        }
+
+        if (/^[•\-\*]\s+/.test(line)) {
+          if (!inList || listType !== "ul") {
+            closeList();
+            html += "<ul>";
+            inList = true;
+            listType = "ul";
+          }
+          html += `<li>${formatInline(line.replace(/^[•\-\*]\s+/, ""))}</li>`;
+          continue;
+        }
+
+        closeList();
+        html += `<p>${formatInline(line)}</p>`;
+      }
+
+      closeList();
+      return html || `<p>${formatInline(text)}</p>`;
+    }
+
+    function formatInline(text) {
+      return escapeHtml(text)
+        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+        .replace(/`([^`]+)`/g, "<code>$1</code>");
+    }
+
+    function setReply(text, empty = false) {
+      lastReplyText = text || "";
+      els.reply.classList.toggle("empty", empty);
+      if (empty) {
+        els.reply.innerHTML = "";
+        return;
+      }
+      els.reply.innerHTML = renderReplyHtml(text);
+      els.reply.scrollTop = 0;
+    }
+
+    function setStatus(text) {
+      els.status.textContent = text || "";
+    }
+
+    function setReplyMeta(data) {
+      const tier = data?.debug?.model_tier;
+      const model = data?.model || data?.debug?.model_requested;
+
+      if (data?.stub) {
+        els.replyBadge.textContent = "Заглушка";
+        els.replyBadge.classList.remove("hidden", "accent");
+      } else if (tier) {
+        els.replyBadge.textContent = tier === "heavy" ? "Мощная модель" : "Лёгкая модель";
+        els.replyBadge.classList.add("accent");
+        els.replyBadge.classList.remove("hidden");
+      } else {
+        els.replyBadge.classList.add("hidden");
+      }
+
+      if (model && !data?.stub) {
+        els.replyModel.textContent = model;
+        els.replyModel.classList.remove("hidden");
+      } else {
+        els.replyModel.classList.add("hidden");
       }
     }
 
-    document.getElementById('send').addEventListener('click', send);
-    document.getElementById('reset').addEventListener('click', async () => {
-      const statusEl = document.getElementById('status');
-      const replyEl = document.getElementById('reply');
-      if (!currentSessionId) {
-        statusEl.textContent = 'Нет активной сессии для сброса';
+    function renderFollowupQuestions(questions) {
+      if (!questions?.length) {
+        els.followupBox.classList.add("hidden");
+        els.followupBox.innerHTML = "";
         return;
       }
-      statusEl.textContent = 'Сброс...';
-      try {
-        const r = await fetch('/session/reset', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: currentSessionId }),
-        });
-        if (!r.ok) {
-          const txt = await r.clone().text();
-          statusEl.textContent = `Ошибка: ${r.status} ${r.statusText}`;
-          replyEl.textContent = txt;
-          return;
-        }
-        // clear UI
-        replyEl.textContent = '';
-        const existingForm = document.getElementById('followup-form');
-        if (existingForm) existingForm.remove();
-        statusEl.textContent = 'Сессия сброшена';
-      } catch (err) {
-        statusEl.textContent = 'Ошибка: ' + err.message;
+
+      els.followupBox.classList.remove("hidden");
+      els.followupBox.innerHTML = `<h4>Уточняющие вопросы</h4>`;
+
+      questions.forEach((q, idx) => {
+        const item = document.createElement("div");
+        item.className = "followup-item";
+        item.innerHTML = `<label for="fq-${idx}">${escapeHtml(q)}</label><textarea id="fq-${idx}"></textarea>`;
+        els.followupBox.appendChild(item);
+      });
+
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "btn btn-primary followup-actions";
+      btn.textContent = "Отправить ответы";
+      btn.onclick = submitFollowup;
+      els.followupBox.appendChild(btn);
+    }
+
+    function initWizard() {
+      wizardStep = 0;
+      WIZARD_STEPS.forEach((s) => { wizardAnswers[s.key] = ""; });
+      renderWizardStep();
+    }
+
+    function renderWizardStep() {
+      const step = WIZARD_STEPS[wizardStep];
+      els.wizardTitle.textContent = step.title;
+      els.wizardProgress.textContent = `Шаг ${wizardStep + 1} из ${WIZARD_STEPS.length}`;
+      els.wizardLabel.textContent = step.label;
+      els.wizardInput.placeholder = step.placeholder;
+      els.wizardInput.value = wizardAnswers[step.key] || "";
+      els.wizardPrev.disabled = wizardStep === 0;
+      els.wizardNext.textContent = wizardStep === WIZARD_STEPS.length - 1 ? "Готово" : "Далее";
+
+      els.wizardDots.innerHTML = "";
+      WIZARD_STEPS.forEach((_, i) => {
+        const dot = document.createElement("div");
+        dot.className = "wizard-dot";
+        if (i < wizardStep) dot.classList.add("done");
+        if (i === wizardStep) dot.classList.add("active");
+        els.wizardDots.appendChild(dot);
+      });
+    }
+
+    function saveWizardStep() {
+      wizardAnswers[WIZARD_STEPS[wizardStep].key] = els.wizardInput.value.trim();
+    }
+
+    function switchMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll(".mode-tab").forEach((tab) => {
+        tab.classList.toggle("active", tab.dataset.mode === mode);
+      });
+      els.analyzePanel.classList.toggle("hidden", mode !== "analyze");
+      els.createPanel.classList.toggle("hidden", mode !== "create");
+      if (mode === "create") initWizard();
+    }
+
+    document.querySelectorAll(".mode-tab").forEach((tab) => {
+      tab.addEventListener("click", () => switchMode(tab.dataset.mode));
+    });
+
+    els.wizardPrev.addEventListener("click", () => {
+      saveWizardStep();
+      if (wizardStep > 0) {
+        wizardStep -= 1;
+        renderWizardStep();
       }
     });
+
+    els.wizardNext.addEventListener("click", () => {
+      saveWizardStep();
+      const step = WIZARD_STEPS[wizardStep];
+      if (step.required && !wizardAnswers[step.key]) {
+        setStatus(`Заполните поле: ${step.title}`);
+        return;
+      }
+      if (wizardStep < WIZARD_STEPS.length - 1) {
+        wizardStep += 1;
+        renderWizardStep();
+        setStatus("");
+      } else {
+        setStatus("Анкета заполнена — нажмите «Отправить»");
+      }
+    });
+
+    async function extractPdfText(file) {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/v1/resume/pdf", { method: "POST", body: form });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.detail || `Ошибка PDF: ${res.status}`);
+      return data;
+    }
+
+    document.getElementById("resumePdf").addEventListener("change", (e) => {
+      const file = e.target.files?.[0];
+      const meta = document.getElementById("pdfMeta");
+      const picker = document.getElementById("filePicker");
+      const hint = picker?.querySelector(".file-picker-hint");
+
+      if (file) {
+        meta.textContent = file.name;
+        picker?.classList.add("has-file");
+        if (hint) hint.textContent = `${Math.round(file.size / 1024)} КБ`;
+      } else {
+        meta.textContent = "Файл не выбран";
+        picker?.classList.remove("has-file");
+        if (hint) hint.textContent = "PDF, до 5 МБ — или вставьте текст ниже";
+      }
+    });
+
+    function buildAnalyzePayload(resumeText) {
+      const note = document.getElementById("analyzeNote").value.trim();
+      const text = note
+        ? `Проанализируй моё резюме по иерархии HeadHunter (шапка → опыт по местам → образование → обо мне → языки → права). ${note}`
+        : "Проанализируй моё резюме по стандарту HeadHunter: разложи на блоки HH, оцени каждый по иерархии, найди слабые места и дай рекомендации.";
+
+      return {
+        message: { text },
+        intent_hint: "analyze_resume",
+        resume: { raw_text: resumeText },
+      };
+    }
+
+    function buildCreatePayload() {
+      saveWizardStep();
+      const missing = WIZARD_STEPS.filter((s) => s.required && !wizardAnswers[s.key]);
+      if (missing.length) {
+        throw new Error(`Заполните шаг: ${missing[0].title}`);
+      }
+
+      const targetRole = wizardAnswers.target_position?.split(",")[0]?.trim() || wizardAnswers.target_position;
+
+      const text = [
+        "Режим: создание резюме с нуля в формате HeadHunter.",
+        "Собери черновик строго по иерархии HH: шапка → опыт по местам → образование → обо мне → языки → права.",
+        "Если данных недостаточно — задай 2–3 уточняющих вопроса по недостающим блокам.",
+        "",
+        `Личные данные: ${wizardAnswers.personal_info || "не указаны"}`,
+        `Город и гражданство: ${wizardAnswers.location}`,
+        `Желаемая должность и зарплата: ${wizardAnswers.target_position}`,
+        `Опыт работы (по местам): ${wizardAnswers.work_experience}`,
+        `Образование: ${wizardAnswers.education}`,
+        `Обо мне: ${wizardAnswers.about_me || "не указано"}`,
+        `Языки и права: ${wizardAnswers.languages || "не указано"}`,
+      ].join("\n");
+
+      return {
+        message: { text },
+        intent_hint: "create_resume",
+        resume: {
+          target_role: targetRole,
+          raw_text: text,
+          sections: {
+            personal_info: wizardAnswers.personal_info || "",
+            location: wizardAnswers.location,
+            target_position: wizardAnswers.target_position,
+            work_experience: wizardAnswers.work_experience,
+            education: wizardAnswers.education,
+            about_me: wizardAnswers.about_me || "",
+            languages: wizardAnswers.languages || "",
+          },
+        },
+      };
+    }
+
+    async function callChat(body) {
+      const res = await fetch("/api/v1/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      let data = null;
+      try {
+        data = await res.json();
+      } catch (e) {
+        throw new Error(await res.text());
+      }
+      if (!res.ok) throw new Error(data?.detail || `Ошибка сервера: ${res.status}`);
+      return data;
+    }
+
+    function handleChatResponse(data) {
+      currentSessionId = data.session_id;
+      setReplyMeta(data);
+
+      const tier = data.debug?.model_tier;
+      const model = data.model || data.debug?.model_requested;
+      if (data.stub) {
+        setStatus("Заглушка — добавьте GIGACHAT_AUTH_KEY в .env");
+      } else {
+        setStatus(tier
+          ? `Ответ получен · ${tier === "heavy" ? "Pro" : "Light"} · ${model}`
+          : `Ответ получен · ${model}`);
+      }
+
+      setReply(data.reply?.text || JSON.stringify(data, null, 2));
+      renderFollowupQuestions(data.reply?.followup_questions || []);
+    }
+
+    async function send() {
+      const sendBtn = document.getElementById("send");
+      sendBtn.disabled = true;
+      setStatus("Отправка...");
+      setReply("", true);
+      els.followupBox.classList.add("hidden");
+      els.replyBadge.classList.add("hidden");
+      els.replyModel.classList.add("hidden");
+
+      try {
+        let body;
+
+        if (currentMode === "analyze") {
+          let resumeText = document.getElementById("resumeText").value.trim();
+          const pdfFile = document.getElementById("resumePdf").files?.[0];
+
+          if (pdfFile) {
+            setStatus("Извлекаем текст из PDF...");
+            const extracted = await extractPdfText(pdfFile);
+            resumeText = extracted.text;
+            document.getElementById("resumeText").value = resumeText;
+            document.getElementById("pdfMeta").textContent = extracted.filename;
+            const picker = document.getElementById("filePicker");
+            const hint = picker?.querySelector(".file-picker-hint");
+            picker?.classList.add("has-file");
+            if (hint) hint.textContent = `Извлечено ${extracted.chars} символов`;
+          }
+
+          if (!resumeText) throw new Error("Добавьте текст резюме или загрузите PDF");
+          body = buildAnalyzePayload(resumeText);
+        } else {
+          body = buildCreatePayload();
+        }
+
+        setStatus("Запрос к GigaChat...");
+        handleChatResponse(await callChat(body));
+      } catch (err) {
+        setStatus("Ошибка: " + err.message);
+        setReply("", true);
+      } finally {
+        sendBtn.disabled = false;
+      }
+    }
+
+    async function submitFollowup() {
+      if (!currentSessionId) return;
+      const questions = [...els.followupBox.querySelectorAll("label")].map((l) => l.textContent);
+      const answers = {};
+      questions.forEach((q, idx) => {
+        answers[q] = document.getElementById(`fq-${idx}`).value.trim();
+      });
+
+      setStatus("Отправка ответов...");
+      try {
+        const resumeText = document.getElementById("resumeText").value.trim();
+        const payload = {
+          session_id: currentSessionId,
+          answers,
+          resume: resumeText ? { raw_text: resumeText } : null,
+        };
+        const res = await fetch("/api/v1/interview", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.detail || `Ошибка: ${res.status}`);
+        handleChatResponse(data);
+      } catch (err) {
+        setStatus("Ошибка: " + err.message);
+      }
+    }
+
+    document.getElementById("send").addEventListener("click", send);
+    document.getElementById("copyReply").addEventListener("click", async () => {
+      if (!lastReplyText) return;
+      try {
+        await navigator.clipboard.writeText(lastReplyText);
+        setStatus("Ответ скопирован");
+      } catch {
+        setStatus("Не удалось скопировать");
+      }
+    });
+
+    document.getElementById("reset").addEventListener("click", async () => {
+      document.getElementById("resumePdf").value = "";
+      const picker = document.getElementById("filePicker");
+      const meta = document.getElementById("pdfMeta");
+      const hint = picker?.querySelector(".file-picker-hint");
+      meta.textContent = "Файл не выбран";
+      picker?.classList.remove("has-file");
+      if (hint) hint.textContent = "PDF, до 5 МБ — или вставьте текст ниже";
+      document.getElementById("resumeText").value = "";
+      document.getElementById("analyzeNote").value = "";
+      initWizard();
+      els.followupBox.classList.add("hidden");
+      els.replyBadge.classList.add("hidden");
+      els.replyModel.classList.add("hidden");
+      setReply("", true);
+      setStatus("");
+
+      if (!currentSessionId) return;
+
+      try {
+        await fetch("/session/reset", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ session_id: currentSessionId }),
+        });
+        currentSessionId = null;
+        setStatus("Сессия сброшена");
+      } catch (err) {
+        setStatus("Ошибка: " + err.message);
+      }
+    });
+
+    initWizard();
   </script>
 </body>
 </html>

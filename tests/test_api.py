@@ -1,6 +1,7 @@
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.core.config import get_settings
 from app.main import app
 
 
@@ -9,6 +10,17 @@ async def client():
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as ac:
         yield ac
+
+
+@pytest.fixture(autouse=True)
+def stub_gigachat(monkeypatch):
+    from app.api import dependencies
+
+    monkeypatch.setenv("GIGACHAT_USE_STUB", "true")
+    monkeypatch.setenv("GIGACHAT_AUTH_KEY", "")
+    monkeypatch.setenv("GIGACHAT_API_KEY", "")
+    get_settings.cache_clear()
+    dependencies.get_gigachat_client.cache_clear()
 
 
 @pytest.mark.asyncio

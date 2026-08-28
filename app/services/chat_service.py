@@ -45,8 +45,24 @@ class ResumeService:
             parts.append(f"Цель: {request.resume.target_role}")
         if request.resume.raw_text:
             parts.append(request.resume.raw_text)
+        section_labels = {
+            "personal_info": "Личная информация",
+            "location": "Город",
+            "citizenship": "Гражданство",
+            "target_position": "Желаемая должность и зарплата",
+            "experience_summary": "Общий опыт",
+            "work_experience": "Опыт работы",
+            "education": "Образование",
+            "about_me": "Обо мне",
+            "languages": "Иностранные языки",
+            "driver_license": "Водительские права",
+            "skills": "Навыки",
+            "experience": "Опыт",
+            "achievements": "Достижения",
+        }
         for key, value in request.resume.sections.items():
-            parts.append(f"{key}: {value}")
+            label = section_labels.get(key, key)
+            parts.append(f"{label}: {value}")
         return "\n".join(parts) if parts else None
 
     def parse_recommendations_stub(self, text: str) -> list[RecommendationItem]:
@@ -68,12 +84,17 @@ class ResumeService:
         # TODO (≈12ч): полноценный парсер резюме из текста / секций
         if not request.resume:
             return None
+        sections = []
+        for k, v in request.resume.sections.items():
+            try:
+                section = ResumeSection(k)
+            except ValueError:
+                logger.debug("Unknown resume section key: %s", k)
+                continue
+            sections.append(ResumeSectionContent(section=section, content=v))
         return ResumeDocument(
             target_role=request.resume.target_role,
-            sections=[
-                ResumeSectionContent(section=k, content=v)
-                for k, v in request.resume.sections.items()
-            ],
+            sections=sections,
         )
 
 
@@ -93,6 +114,18 @@ class ChatService:
     async def process(self, request: ChatRequest) -> ChatResponse:
         intent = self._resume.detect_intent(request)
         resume_context = self._resume.build_resume_context(request)
+        resume_text = request.resume.raw_text if request.resume else None
+
+        from app.core.config import get_settings
+        from app.services.model_router import select_gigachat_model
+
+        settings = get_settings()
+        model_id, model_tier = select_gigachat_model(
+            settings,
+            intent=intent,
+            user_message=request.message.text,
+            resume_text=resume_text,
+        )
 
         user_prompt = self._prompts.build_user_prompt(
             intent,
@@ -118,7 +151,9 @@ class ChatService:
         messages.append(GigaChatMessage(role="user", content=user_prompt))
 
         try:
-            completion = await self._gigachat.complete(GigaChatCompletionRequest(messages=messages))
+            completion = await self._gigachat.complete(
+                GigaChatCompletionRequest(messages=messages, model=model_id)
+            )
         
         except Exception as e:
             logger.exception("GigaChat request failed")
@@ -177,6 +212,8 @@ class ChatService:
             stub=completion.stub,
             debug={
                 "prompt_name": intent.value,
+                "model_tier": model_tier,
+                "model_requested": model_id,
                 "user_prompt_preview": user_prompt[:300],
             },
         )

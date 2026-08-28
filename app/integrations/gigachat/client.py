@@ -24,6 +24,10 @@ class GigaChatClient:
         token = await self._auth.get_access_token()
         url = f"{self._settings.gigachat_api_url.rstrip('/')}/chat/completions"
 
+        payload = request.model_dump()
+        if not payload.get("model"):
+            payload["model"] = self._settings.gigachat_model
+
         headers = {
             "Authorization": f"Bearer {token}",
             "Content-Type": "application/json",
@@ -38,7 +42,7 @@ class GigaChatClient:
         )
 
         async with httpx.AsyncClient(verify=verify_param, timeout=60.0) as client:
-            response = await client.post(url, headers=headers, json=request.model_dump())
+            response = await client.post(url, headers=headers, json=payload)
             response.raise_for_status()
             data = response.json()
             content = data["choices"][0]["message"]["content"]

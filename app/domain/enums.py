@@ -12,12 +12,24 @@ class MessageIntent(StrEnum):
 
 
 class ResumeSection(StrEnum):
+    """Блоки резюме в иерархии HeadHunter (hh.ru)."""
+
+    PERSONAL_INFO = "personal_info"
+    LOCATION = "location"
+    CITIZENSHIP = "citizenship"
+    TARGET_POSITION = "target_position"
+    EXPERIENCE_SUMMARY = "experience_summary"
+    WORK_EXPERIENCE = "work_experience"
+    EDUCATION = "education"
+    ABOUT_ME = "about_me"
+    LANGUAGES = "languages"
+    DRIVER_LICENSE = "driver_license"
+    CONTACTS = "contacts"
+    SKILLS = "skills"
+    # legacy aliases
     SUMMARY = "summary"
     EXPERIENCE = "experience"
-    EDUCATION = "education"
-    SKILLS = "skills"
     PROJECTS = "projects"
-    CONTACTS = "contacts"
 
 
 class ProcessingStatus(StrEnum):
