@@ -1,0 +1,27 @@
+# Деплой на Render: https://dashboard.render.com → New → Blueprint → этот репозиторий
+services:
+  - type: web
+    name: resume-designer
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: LOG_LEVEL
+        value: INFO
+      - key: GIGACHAT_USE_STUB
+        value: "false"
+      - key: GIGACHAT_VERIFY_SSL
+        value: "false"
+      - key: GIGACHAT_MODEL_LIGHT
+        value: GigaChat-2
+      - key: GIGACHAT_MODEL_HEAVY
+        value: GigaChat-2-Pro
+      - key: GIGACHAT_SCOPE
+        value: GIGACHAT_API_PERS
+      # Секреты задайте в Dashboard → Environment (не коммитьте в git)
+      - key: GIGACHAT_AUTH_KEY
+        sync: false
+      - key: GIGACHAT_CLIENT_ID
+        sync: false

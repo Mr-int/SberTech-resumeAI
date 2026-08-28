@@ -2,6 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
@@ -43,11 +44,12 @@ def create_app() -> FastAPI:
     app.include_router(interview, prefix="/api/v1")
     app.include_router(session, prefix="/session")
 
-    # Mount a small static site (site-визитка) to demonstrate functionality
-    app.mount("/site", StaticFiles(directory="app/static", html=True), name="site")
+    @app.get("/", include_in_schema=False)
+    async def root() -> RedirectResponse:
+        return RedirectResponse(url="/site/", status_code=307)
 
-    @app.get("/", tags=["Meta"])
-    async def root() -> dict:
+    @app.get("/meta", tags=["Meta"])
+    async def meta() -> dict:
         return {
             "service": settings.app_name,
             "version": __version__,
@@ -58,6 +60,9 @@ def create_app() -> FastAPI:
             "site": "/site/",
             "block2_status": "planned",
         }
+
+    # Mount static site last so API routes stay available
+    app.mount("/site", StaticFiles(directory="app/static", html=True), name="site")
 
     return app
 
