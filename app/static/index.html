@@ -184,7 +184,13 @@
     }
 
     textarea,
-    input[type="text"] {
+    select,
+    input[type="text"],
+    input[type="date"],
+    input[type="month"],
+    input[type="number"],
+    input[type="email"],
+    input[type="tel"] {
       width: 100%;
       border-radius: var(--radius-sm);
       border: 1px solid var(--line);
@@ -195,6 +201,14 @@
       transition: border-color 0.15s ease, box-shadow 0.15s ease;
     }
 
+    select {
+      appearance: none;
+      background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2378716c' d='M1 1l5 5 5-5'/></svg>");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 36px;
+    }
+
     textarea::placeholder,
     input::placeholder {
       color: #a8a29e;
@@ -202,9 +216,16 @@
 
     textarea { min-height: 110px; resize: vertical; }
     #resumeText { min-height: 168px; }
+    textarea.compact { min-height: 84px; }
 
     textarea:focus,
-    input[type="text"]:focus {
+    select:focus,
+    input[type="text"]:focus,
+    input[type="date"]:focus,
+    input[type="month"]:focus,
+    input[type="number"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus {
       outline: none;
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(44, 74, 62, 0.12);
@@ -324,7 +345,7 @@
     .wizard-head {
       display: flex;
       justify-content: space-between;
-      align-items: baseline;
+      align-items: flex-start;
       gap: 12px;
       margin-bottom: 16px;
     }
@@ -335,6 +356,69 @@
       font-weight: 500;
       color: var(--ink);
     }
+
+    .wizard-desc {
+      color: var(--muted);
+      font-size: 0.8125rem;
+      margin-top: 4px;
+      line-height: 1.45;
+    }
+
+    .wizard-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px 14px;
+    }
+
+    .wizard-grid .field { margin-bottom: 0; }
+
+    .wizard-grid .span-2 { grid-column: 1 / -1; }
+
+    .field .optional {
+      font-weight: 500;
+      color: var(--muted);
+      font-size: 0.75rem;
+    }
+
+    .repeat-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      background: var(--surface);
+      margin-bottom: 12px;
+    }
+
+    .repeat-card-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .repeat-card-head span {
+      font-size: 0.8125rem;
+      font-weight: 600;
+      color: var(--accent);
+    }
+
+    .checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+    }
+
+    .check {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--ink-soft);
+      cursor: pointer;
+    }
+
+    .check input { width: auto; accent-color: var(--accent); }
 
     .wizard-progress {
       color: var(--muted);
@@ -366,8 +450,10 @@
     .wizard-nav {
       display: flex;
       gap: 8px;
-      margin-top: 14px;
+      margin-top: 16px;
     }
+
+    .wizard-nav .btn { flex: 1; }
 
   /* —— Buttons —— */
     .btn {
@@ -627,6 +713,8 @@
         align-items: stretch;
       }
       .controls .btn { width: 100%; }
+      .wizard-grid { grid-template-columns: 1fr; }
+      .wizard-head { flex-direction: column; align-items: flex-start; }
     }
   </style>
 </head>
@@ -686,14 +774,14 @@
       <div id="createPanel" class="hidden">
         <div class="wizard">
           <div class="wizard-head">
-            <h3 id="wizardTitle">Целевая должность</h3>
-            <div class="wizard-progress" id="wizardProgress">Шаг 1 из 5</div>
+            <div>
+              <h3 id="wizardTitle">Личные данные</h3>
+              <p class="wizard-desc" id="wizardDesc">Шапка резюме — отдельные поля, как на hh.ru</p>
+            </div>
+            <div class="wizard-progress" id="wizardProgress">Этап 1 из 7</div>
           </div>
           <div class="wizard-dots" id="wizardDots"></div>
-          <div class="field" style="margin-bottom:0">
-            <label id="wizardLabel" for="wizardInput">Какую должность вы ищете?</label>
-            <textarea id="wizardInput" rows="3" placeholder="Например: Junior Python-разработчик"></textarea>
-          </div>
+          <div id="wizardFields"></div>
           <div class="wizard-nav">
             <button type="button" class="btn btn-secondary" id="wizardPrev">Назад</button>
             <button type="button" class="btn btn-secondary" id="wizardNext">Далее</button>
@@ -730,72 +818,35 @@
     gsap.from("header", { opacity: 0, y: 24, duration: 0.8, ease: "power2.out" });
     gsap.from(".panel", { opacity: 0, y: 32, duration: 0.85, delay: 0.15, ease: "power2.out" });
 
+    const MONTHS = [
+      "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+      "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь",
+    ];
+
     const WIZARD_STEPS = [
-      {
-        key: "personal_info",
-        title: "Личные данные",
-        label: "Возраст, дата рождения, семейное состояние",
-        placeholder: "39 лет (01.01.1987), высшее образование, в браке, есть дети",
-        required: false,
-      },
-      {
-        key: "location",
-        title: "Город и гражданство",
-        label: "Где вы живите и гражданство",
-        placeholder: "Москва. Гражданство: Россия",
-        required: true,
-      },
-      {
-        key: "target_position",
-        title: "Желаемая должность",
-        label: "Должность и ожидаемая зарплата",
-        placeholder: "Менеджер по продажам, 50 000 ₽",
-        required: true,
-      },
-      {
-        key: "work_experience",
-        title: "Опыт работы",
-        label: "Места работы: период, компания, обязанности и достижения с цифрами",
-        placeholder: "Январь 2011 – сейчас, ООО «Атрис», Москва. 70 звонков/день, +25% прибыли в 2016, 19 млн ₽ договоров...",
-        required: true,
-      },
-      {
-        key: "education",
-        title: "Образование",
-        label: "Уровень, год, вуз, факультет, специальность",
-        placeholder: "2009, ВАВТ, факультет внешнеторгового менеджмента, менеджмент, очная",
-        required: true,
-      },
-      {
-        key: "about_me",
-        title: "Обо мне",
-        label: "Сильные стороны, ключевые компетенции и навыки",
-        placeholder: "Коммуникабельность, активные продажи, работа с возражениями, клиентская база...",
-        required: false,
-      },
-      {
-        key: "languages",
-        title: "Языки и права",
-        label: "Иностранные языки и водительские права",
-        placeholder: "Английский — разговорный. Водительские права категории B",
-        required: false,
-      },
+      { id: "personal", title: "Личные данные", desc: "ФИО, дата рождения и контакты — шапка резюме" },
+      { id: "location", title: "Город и гражданство", desc: "Где живёте и какое гражданство" },
+      { id: "role", title: "Желаемая должность", desc: "Позиция и ожидаемый доход" },
+      { id: "experience", title: "Опыт работы", desc: "Каждое место — отдельный блок, от нового к старому" },
+      { id: "education", title: "Образование", desc: "Учебные заведения по отдельности" },
+      { id: "about", title: "Обо мне", desc: "Сильные стороны и ключевые навыки" },
+      { id: "languages", title: "Языки и права", desc: "Иностранные языки и водительские категории" },
     ];
 
     let currentMode = "analyze";
     let currentSessionId = null;
     let lastReplyText = "";
     let wizardStep = 0;
-    const wizardAnswers = {};
+    let wizardAnswers = {};
 
     const els = {
       analyzePanel: document.getElementById("analyzePanel"),
       createPanel: document.getElementById("createPanel"),
       wizardTitle: document.getElementById("wizardTitle"),
+      wizardDesc: document.getElementById("wizardDesc"),
       wizardProgress: document.getElementById("wizardProgress"),
       wizardDots: document.getElementById("wizardDots"),
-      wizardLabel: document.getElementById("wizardLabel"),
-      wizardInput: document.getElementById("wizardInput"),
+      wizardFields: document.getElementById("wizardFields"),
       wizardPrev: document.getElementById("wizardPrev"),
       wizardNext: document.getElementById("wizardNext"),
       status: document.getElementById("status"),
@@ -938,22 +989,402 @@
       els.followupBox.appendChild(btn);
     }
 
-    function initWizard() {
-      wizardStep = 0;
-      WIZARD_STEPS.forEach((s) => { wizardAnswers[s.key] = ""; });
-      renderWizardStep();
+    function emptyJob() {
+      return {
+        position: "",
+        company: "",
+        city: "",
+        company_size: "",
+        start: "",
+        end: "",
+        current: false,
+        duties: "",
+        achievements: "",
+      };
+    }
+
+    function emptyEdu() {
+      return { level: "", form: "", year: "", school: "", faculty: "", specialty: "" };
+    }
+
+    function emptyLang() {
+      return { name: "", level: "" };
+    }
+
+    function emptyWizardState() {
+      return {
+        full_name: "",
+        birth_date: "",
+        phone: "",
+        email: "",
+        marital_status: "",
+        children: "",
+        city: "",
+        citizenship: "Россия",
+        relocation: "",
+        target_role: "",
+        salary: "",
+        salary_currency: "₽",
+        jobs: [emptyJob()],
+        education_items: [emptyEdu()],
+        about_me: "",
+        skills: "",
+        languages_list: [emptyLang()],
+        driver_licenses: [],
+      };
+    }
+
+    function formatMonth(value) {
+      if (!value) return "не указано";
+      const [year, month] = value.split("-");
+      const name = MONTHS[Number(month) - 1];
+      return name ? `${name} ${year}` : value;
+    }
+
+    function formatBirth(dateStr) {
+      if (!dateStr) return "";
+      const birth = new Date(`${dateStr}T00:00:00`);
+      if (Number.isNaN(birth.getTime())) return dateStr;
+      const now = new Date();
+      let age = now.getFullYear() - birth.getFullYear();
+      const monthDiff = now.getMonth() - birth.getMonth();
+      if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age -= 1;
+      const day = birth.getDate();
+      const month = MONTHS[birth.getMonth()].toLowerCase();
+      return `${age} лет (${day} ${month} ${birth.getFullYear()})`;
+    }
+
+    function optionList(values, selected) {
+      return values
+        .map(([value, label]) => {
+          const isSelected = String(selected || "") === value ? " selected" : "";
+          return `<option value="${escapeHtml(value)}"${isSelected}>${escapeHtml(label)}</option>`;
+        })
+        .join("");
+    }
+
+    function fieldInput({ label, bind, value, type = "text", placeholder = "", required = false, optional = false, span2 = false, list, index, rows, options, extra = "" }) {
+      const id = list ? `${list}-${index}-${bind}` : bind;
+      const listAttr = list != null ? ` data-list="${list}" data-index="${index}"` : "";
+      const star = required ? " *" : "";
+      const opt = optional ? ` <span class="optional">необязательно</span>` : "";
+      const span = span2 ? " span-2" : "";
+      let control;
+      if (type === "textarea") {
+        control = `<textarea id="${id}" class="compact" rows="${rows || 3}" data-bind="${bind}"${listAttr} placeholder="${escapeHtml(placeholder)}">${escapeHtml(value || "")}</textarea>`;
+      } else if (type === "select") {
+        control = `<select id="${id}" data-bind="${bind}"${listAttr}>${optionList(options, value)}</select>`;
+      } else if (type === "checkbox") {
+        control = `<label class="check"><input type="checkbox" data-bind="${bind}"${listAttr}${value ? " checked" : ""}> ${escapeHtml(label)}</label>`;
+        return `<div class="field${span}">${control}</div>`;
+      } else {
+        control = `<input id="${id}" type="${type}" data-bind="${bind}"${listAttr} value="${escapeHtml(value || "")}" placeholder="${escapeHtml(placeholder)}" ${extra}>`;
+      }
+      return `<div class="field${span}"><label for="${id}">${escapeHtml(label)}${star}${opt}</label>${control}</div>`;
+    }
+
+    function renderPersonal() {
+      const a = wizardAnswers;
+      return `<div class="wizard-grid">
+        ${fieldInput({ label: "ФИО", bind: "full_name", value: a.full_name, placeholder: "Иванов Иван Иванович", required: true, span2: true, extra: 'autocomplete="name"' })}
+        ${fieldInput({ label: "Дата рождения", bind: "birth_date", value: a.birth_date, type: "date" })}
+        ${fieldInput({
+          label: "Семейное положение",
+          bind: "marital_status",
+          value: a.marital_status,
+          type: "select",
+          options: [
+            ["", "Не указано"],
+            ["не состою в браке", "Не состою в браке"],
+            ["состою в браке", "Состою в браке"],
+            ["в отношениях", "В отношениях"],
+          ],
+        })}
+        ${fieldInput({ label: "Телефон", bind: "phone", value: a.phone, type: "tel", placeholder: "+7 900 000-00-00", optional: true, extra: 'autocomplete="tel"' })}
+        ${fieldInput({ label: "Email", bind: "email", value: a.email, type: "email", placeholder: "name@mail.ru", optional: true, extra: 'autocomplete="email"' })}
+        ${fieldInput({
+          label: "Дети",
+          bind: "children",
+          value: a.children,
+          type: "select",
+          optional: true,
+          options: [
+            ["", "Не указано"],
+            ["нет детей", "Нет детей"],
+            ["есть дети", "Есть дети"],
+          ],
+        })}
+      </div>`;
+    }
+
+    function renderLocation() {
+      const a = wizardAnswers;
+      return `<div class="wizard-grid">
+        ${fieldInput({ label: "Город", bind: "city", value: a.city, placeholder: "Чебоксары", required: true, extra: 'autocomplete="address-level2"' })}
+        ${fieldInput({ label: "Гражданство", bind: "citizenship", value: a.citizenship, placeholder: "Россия", extra: 'autocomplete="country-name"' })}
+        ${fieldInput({
+          label: "Готовность к переезду",
+          bind: "relocation",
+          value: a.relocation,
+          type: "select",
+          optional: true,
+          span2: true,
+          options: [
+            ["", "Не указано"],
+            ["не готов к переезду", "Не готов к переезду"],
+            ["готов к переезду", "Готов к переезду"],
+            ["возможен переезд", "Возможен переезд"],
+          ],
+        })}
+      </div>`;
+    }
+
+    function renderRole() {
+      const a = wizardAnswers;
+      return `<div class="wizard-grid">
+        ${fieldInput({ label: "Желаемая должность", bind: "target_role", value: a.target_role, placeholder: "Менеджер по продажам", required: true, span2: true })}
+        ${fieldInput({ label: "Зарплата", bind: "salary", value: a.salary, placeholder: "50 000" })}
+        ${fieldInput({
+          label: "Валюта",
+          bind: "salary_currency",
+          value: a.salary_currency,
+          type: "select",
+          options: [["₽", "₽ рубли"], ["$", "$ доллары"], ["€", "€ евро"]],
+        })}
+      </div>`;
+    }
+
+    function renderJobs() {
+      const cards = wizardAnswers.jobs.map((job, index) => `
+        <div class="repeat-card">
+          <div class="repeat-card-head">
+            <span>Место работы ${index + 1}</span>
+            ${wizardAnswers.jobs.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-remove-list="jobs" data-index="${index}">Удалить</button>` : ""}
+          </div>
+          <div class="wizard-grid">
+            ${fieldInput({ label: "Должность", bind: "position", value: job.position, list: "jobs", index, required: true, placeholder: "Менеджер по продажам" })}
+            ${fieldInput({ label: "Компания", bind: "company", value: job.company, list: "jobs", index, required: true, placeholder: "ООО «Компания»" })}
+            ${fieldInput({ label: "Город компании", bind: "city", value: job.city, list: "jobs", index, placeholder: "Москва" })}
+            ${fieldInput({
+              label: "Размер компании",
+              bind: "company_size",
+              value: job.company_size,
+              list: "jobs",
+              index,
+              type: "select",
+              options: [
+                ["", "Не указано"],
+                ["небольшая компания", "Небольшая"],
+                ["средняя компания", "Средняя"],
+                ["крупная компания", "Крупная"],
+              ],
+            })}
+            ${fieldInput({ label: "Начало работы", bind: "start", value: job.start, list: "jobs", index, type: "month" })}
+            ${fieldInput({ label: "Окончание", bind: "end", value: job.end, list: "jobs", index, type: "month", extra: job.current ? "disabled" : "" })}
+            ${fieldInput({ label: "Работаю здесь сейчас", bind: "current", value: job.current, list: "jobs", index, type: "checkbox", span2: true })}
+            ${fieldInput({ label: "Обязанности", bind: "duties", value: job.duties, list: "jobs", index, type: "textarea", span2: true, placeholder: "Что делали на этой позиции" })}
+            ${fieldInput({ label: "Достижения с цифрами", bind: "achievements", value: job.achievements, list: "jobs", index, type: "textarea", span2: true, placeholder: "Например: +25% продаж, 19 млн ₽ договоров" })}
+          </div>
+        </div>`).join("");
+      return `${cards}<button type="button" class="btn btn-secondary" data-add-list="jobs">Добавить место работы</button>`;
+    }
+
+    function renderEducation() {
+      const cards = wizardAnswers.education_items.map((item, index) => `
+        <div class="repeat-card">
+          <div class="repeat-card-head">
+            <span>Образование ${index + 1}</span>
+            ${wizardAnswers.education_items.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-remove-list="education_items" data-index="${index}">Удалить</button>` : ""}
+          </div>
+          <div class="wizard-grid">
+            ${fieldInput({
+              label: "Уровень",
+              bind: "level",
+              value: item.level,
+              list: "education_items",
+              index,
+              type: "select",
+              options: [
+                ["", "Не указано"],
+                ["среднее", "Среднее"],
+                ["среднее специальное", "Среднее специальное"],
+                ["неоконченное высшее", "Неоконченное высшее"],
+                ["высшее", "Высшее"],
+                ["бакалавр", "Бакалавр"],
+                ["магистр", "Магистр"],
+              ],
+            })}
+            ${fieldInput({
+              label: "Форма обучения",
+              bind: "form",
+              value: item.form,
+              list: "education_items",
+              index,
+              type: "select",
+              options: [
+                ["", "Не указано"],
+                ["очная", "Очная"],
+                ["очно-заочная", "Очно-заочная"],
+                ["заочная", "Заочная"],
+              ],
+            })}
+            ${fieldInput({ label: "Учебное заведение", bind: "school", value: item.school, list: "education_items", index, span2: true, placeholder: "Название вуза или колледжа" })}
+            ${fieldInput({ label: "Факультет", bind: "faculty", value: item.faculty, list: "education_items", index, placeholder: "Экономический" })}
+            ${fieldInput({ label: "Специальность", bind: "specialty", value: item.specialty, list: "education_items", index, placeholder: "Менеджмент" })}
+            ${fieldInput({ label: "Год окончания", bind: "year", value: item.year, list: "education_items", index, type: "number", placeholder: "2024", extra: 'min="1950" max="2035"' })}
+          </div>
+        </div>`).join("");
+      return `${cards}<button type="button" class="btn btn-secondary" data-add-list="education_items">Добавить образование</button>`;
+    }
+
+    function renderAbout() {
+      const a = wizardAnswers;
+      return `<div class="wizard-grid">
+        ${fieldInput({ label: "О себе", bind: "about_me", value: a.about_me, type: "textarea", span2: true, rows: 4, placeholder: "Сильные стороны, как работаете, что важно подчеркнуть" })}
+        ${fieldInput({ label: "Ключевые навыки", bind: "skills", value: a.skills, type: "textarea", span2: true, placeholder: "Продажи, переговоры, Excel, английский" })}
+      </div>`;
+    }
+
+    function renderLanguages() {
+      const licenses = ["A", "B", "C", "D", "E", "BE", "CE", "M"];
+      const cards = wizardAnswers.languages_list.map((item, index) => `
+        <div class="repeat-card">
+          <div class="repeat-card-head">
+            <span>Язык ${index + 1}</span>
+            ${wizardAnswers.languages_list.length > 1 ? `<button type="button" class="btn btn-ghost btn-sm" data-remove-list="languages_list" data-index="${index}">Удалить</button>` : ""}
+          </div>
+          <div class="wizard-grid">
+            ${fieldInput({ label: "Язык", bind: "name", value: item.name, list: "languages_list", index, placeholder: "Английский" })}
+            ${fieldInput({
+              label: "Уровень",
+              bind: "level",
+              value: item.level,
+              list: "languages_list",
+              index,
+              type: "select",
+              options: [
+                ["", "Не указано"],
+                ["родной", "Родной"],
+                ["C2", "C2 — свободно"],
+                ["C1", "C1 — продвинутый"],
+                ["B2", "B2 — выше среднего"],
+                ["B1", "B1 — средний"],
+                ["A2", "A2 — элементарный"],
+                ["A1", "A1 — начальный"],
+                ["разговорный", "Разговорный"],
+                ["читаю и перевожу", "Читаю и перевожу"],
+              ],
+            })}
+          </div>
+        </div>`).join("");
+      const checks = licenses.map((code) => {
+        const checked = wizardAnswers.driver_licenses.includes(code) ? " checked" : "";
+        return `<label class="check"><input type="checkbox" data-license="${code}"${checked}> ${code}</label>`;
+      }).join("");
+      return `${cards}
+        <button type="button" class="btn btn-secondary" data-add-list="languages_list">Добавить язык</button>
+        <div class="field" style="margin-top:16px;margin-bottom:0">
+          <label>Водительские права <span class="optional">необязательно</span></label>
+          <div class="checks">${checks}</div>
+        </div>`;
+    }
+
+    function renderWizardFields() {
+      const renderers = {
+        personal: renderPersonal,
+        location: renderLocation,
+        role: renderRole,
+        experience: renderJobs,
+        education: renderEducation,
+        about: renderAbout,
+        languages: renderLanguages,
+      };
+      return (renderers[WIZARD_STEPS[wizardStep].id] || (() => ""))();
+    }
+
+    function saveWizardStep() {
+      if (!els.wizardFields) return;
+      els.wizardFields.querySelectorAll("[data-bind]").forEach((el) => {
+        const key = el.dataset.bind;
+        const list = el.dataset.list;
+        const value = el.type === "checkbox" ? el.checked : el.value.trim();
+        if (list) {
+          const item = wizardAnswers[list]?.[Number(el.dataset.index)];
+          if (item) item[key] = value;
+        } else {
+          wizardAnswers[key] = value;
+        }
+      });
+      const licenseBoxes = els.wizardFields.querySelectorAll("[data-license]");
+      if (licenseBoxes.length) {
+        wizardAnswers.driver_licenses = [...licenseBoxes]
+          .filter((el) => el.checked)
+          .map((el) => el.dataset.license);
+      }
+    }
+
+    function bindWizardFields() {
+      els.wizardFields.addEventListener("input", saveWizardStep);
+      els.wizardFields.addEventListener("change", (event) => {
+        saveWizardStep();
+        if (event.target.dataset.bind === "current") renderWizardStep();
+      });
+      els.wizardFields.addEventListener("click", (event) => {
+        const addBtn = event.target.closest("[data-add-list]");
+        const removeBtn = event.target.closest("[data-remove-list]");
+        if (addBtn) {
+          saveWizardStep();
+          const list = addBtn.dataset.addList;
+          const factory = list === "jobs" ? emptyJob : list === "education_items" ? emptyEdu : emptyLang;
+          wizardAnswers[list].push(factory());
+          renderWizardStep();
+        }
+        if (removeBtn) {
+          saveWizardStep();
+          const list = removeBtn.dataset.removeList;
+          const index = Number(removeBtn.dataset.index);
+          if (wizardAnswers[list].length > 1) {
+            wizardAnswers[list].splice(index, 1);
+            renderWizardStep();
+          }
+        }
+      });
+    }
+
+    function stepError(index) {
+      const a = wizardAnswers;
+      switch (WIZARD_STEPS[index].id) {
+        case "personal":
+          return a.full_name ? "" : "Укажите ФИО";
+        case "location":
+          return a.city ? "" : "Укажите город";
+        case "role":
+          return a.target_role ? "" : "Укажите желаемую должность";
+        case "experience":
+          return a.jobs.some((job) => job.position && job.company)
+            ? ""
+            : "Заполните хотя бы одно место работы: должность и компанию";
+        case "education":
+          return a.education_items.some((item) => item.school || item.level)
+            ? ""
+            : "Укажите учебное заведение или уровень образования";
+        default:
+          return "";
+      }
+    }
+
+    function validateStep(index) {
+      saveWizardStep();
+      return stepError(index);
     }
 
     function renderWizardStep() {
       const step = WIZARD_STEPS[wizardStep];
       els.wizardTitle.textContent = step.title;
-      els.wizardProgress.textContent = `Шаг ${wizardStep + 1} из ${WIZARD_STEPS.length}`;
-      els.wizardLabel.textContent = step.label;
-      els.wizardInput.placeholder = step.placeholder;
-      els.wizardInput.value = wizardAnswers[step.key] || "";
+      els.wizardDesc.textContent = step.desc;
+      els.wizardProgress.textContent = `Этап ${wizardStep + 1} из ${WIZARD_STEPS.length}`;
       els.wizardPrev.disabled = wizardStep === 0;
       els.wizardNext.textContent = wizardStep === WIZARD_STEPS.length - 1 ? "Готово" : "Далее";
-
       els.wizardDots.innerHTML = "";
       WIZARD_STEPS.forEach((_, i) => {
         const dot = document.createElement("div");
@@ -962,10 +1393,13 @@
         if (i === wizardStep) dot.classList.add("active");
         els.wizardDots.appendChild(dot);
       });
+      els.wizardFields.innerHTML = renderWizardFields();
     }
 
-    function saveWizardStep() {
-      wizardAnswers[WIZARD_STEPS[wizardStep].key] = els.wizardInput.value.trim();
+    function initWizard() {
+      wizardStep = 0;
+      wizardAnswers = emptyWizardState();
+      renderWizardStep();
     }
 
     function switchMode(mode) {
@@ -975,7 +1409,7 @@
       });
       els.analyzePanel.classList.toggle("hidden", mode !== "analyze");
       els.createPanel.classList.toggle("hidden", mode !== "create");
-      if (mode === "create") initWizard();
+      if (mode === "create") renderWizardStep();
     }
 
     document.querySelectorAll(".mode-tab").forEach((tab) => {
@@ -987,14 +1421,14 @@
       if (wizardStep > 0) {
         wizardStep -= 1;
         renderWizardStep();
+        setStatus("");
       }
     });
 
     els.wizardNext.addEventListener("click", () => {
-      saveWizardStep();
-      const step = WIZARD_STEPS[wizardStep];
-      if (step.required && !wizardAnswers[step.key]) {
-        setStatus(`Заполните поле: ${step.title}`);
+      const error = validateStep(wizardStep);
+      if (error) {
+        setStatus(error);
         return;
       }
       if (wizardStep < WIZARD_STEPS.length - 1) {
@@ -1005,6 +1439,8 @@
         setStatus("Анкета заполнена — нажмите «Отправить»");
       }
     });
+
+    bindWizardFields();
 
     function formatApiDetail(detail) {
       if (!detail) return "";
@@ -1100,43 +1536,114 @@
       };
     }
 
+    function joinParts(parts) {
+      return parts.filter(Boolean).join(". ");
+    }
+
+    function formatJobsText() {
+      return wizardAnswers.jobs
+        .filter((job) => job.position || job.company)
+        .map((job, index) => {
+          const end = job.current ? "работает сейчас" : formatMonth(job.end);
+          return [
+            `Место ${index + 1}:`,
+            `Должность: ${job.position || "не указана"}`,
+            `Компания: ${joinParts([job.company, job.company_size, job.city]) || "не указана"}`,
+            `Период: ${formatMonth(job.start)} – ${end}`,
+            job.duties ? `Обязанности: ${job.duties}` : "",
+            job.achievements ? `Достижения: ${job.achievements}` : "",
+          ].filter(Boolean).join("\n");
+        })
+        .join("\n\n") || "не указан";
+    }
+
+    function formatEducationText() {
+      return wizardAnswers.education_items
+        .filter((item) => item.school || item.level || item.specialty)
+        .map((item, index) => joinParts([
+          `Образование ${index + 1}`,
+          item.level,
+          item.form,
+          item.year ? `год окончания ${item.year}` : "",
+          item.school,
+          item.faculty ? `факультет ${item.faculty}` : "",
+          item.specialty ? `специальность ${item.specialty}` : "",
+        ]))
+        .join("\n") || "не указано";
+    }
+
+    function formatLanguagesText() {
+      const langs = wizardAnswers.languages_list
+        .filter((item) => item.name)
+        .map((item) => item.level ? `${item.name} — ${item.level}` : item.name)
+        .join("; ");
+      const rights = wizardAnswers.driver_licenses.length
+        ? `Водительские права: ${wizardAnswers.driver_licenses.join(", ")}`
+        : "";
+      return [langs || "языки не указаны", rights].filter(Boolean).join(". ");
+    }
+
     function buildCreatePayload() {
       saveWizardStep();
-      const missing = WIZARD_STEPS.filter((s) => s.required && !wizardAnswers[s.key]);
-      if (missing.length) {
-        throw new Error(`Заполните шаг: ${missing[0].title}`);
+      const firstErrorIndex = WIZARD_STEPS.findIndex((_, index) => stepError(index));
+      if (firstErrorIndex >= 0) {
+        wizardStep = firstErrorIndex;
+        renderWizardStep();
+        throw new Error(stepError(firstErrorIndex));
       }
 
-      const targetRole = wizardAnswers.target_position?.split(",")[0]?.trim() || wizardAnswers.target_position;
+      const a = wizardAnswers;
+      const personal = joinParts([
+        a.full_name,
+        formatBirth(a.birth_date),
+        a.marital_status,
+        a.children,
+        a.phone,
+        a.email,
+      ]) || "не указаны";
+      const location = joinParts([
+        a.city,
+        a.citizenship ? `гражданство: ${a.citizenship}` : "",
+        a.relocation,
+      ]);
+      const targetPosition = joinParts([
+        a.target_role,
+        a.salary ? `${a.salary} ${a.salary_currency}` : "",
+      ]);
+      const jobs = formatJobsText();
+      const education = formatEducationText();
+      const about = [a.about_me, a.skills ? `Навыки: ${a.skills}` : ""].filter(Boolean).join("\n") || "не указано";
+      const languages = formatLanguagesText();
 
       const text = [
         "Режим: создание резюме с нуля в формате HeadHunter.",
         "Собери черновик строго по иерархии HH: шапка → опыт по местам → образование → обо мне → языки → права.",
         "Если данных недостаточно — задай 2–3 уточняющих вопроса по недостающим блокам.",
         "",
-        `Личные данные: ${wizardAnswers.personal_info || "не указаны"}`,
-        `Город и гражданство: ${wizardAnswers.location}`,
-        `Желаемая должность и зарплата: ${wizardAnswers.target_position}`,
-        `Опыт работы (по местам): ${wizardAnswers.work_experience}`,
-        `Образование: ${wizardAnswers.education}`,
-        `Обо мне: ${wizardAnswers.about_me || "не указано"}`,
-        `Языки и права: ${wizardAnswers.languages || "не указано"}`,
+        `ФИО: ${a.full_name}`,
+        `Личные данные: ${personal}`,
+        `Город и гражданство: ${location}`,
+        `Желаемая должность и зарплата: ${targetPosition}`,
+        `Опыт работы (по местам):\n${jobs}`,
+        `Образование:\n${education}`,
+        `Обо мне: ${about}`,
+        `Языки и права: ${languages}`,
       ].join("\n");
 
       return {
         message: { text },
         intent_hint: "create_resume",
         resume: {
-          target_role: targetRole,
+          target_role: a.target_role,
           raw_text: text,
           sections: {
-            personal_info: wizardAnswers.personal_info || "",
-            location: wizardAnswers.location,
-            target_position: wizardAnswers.target_position,
-            work_experience: wizardAnswers.work_experience,
-            education: wizardAnswers.education,
-            about_me: wizardAnswers.about_me || "",
-            languages: wizardAnswers.languages || "",
+            personal_info: personal,
+            location,
+            target_position: targetPosition,
+            work_experience: jobs,
+            education,
+            about_me: about,
+            languages,
           },
         },
       };
