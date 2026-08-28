@@ -90,7 +90,5 @@ docker-compose up --build
 
 ## Публикация в интернет
 
-**Netlify Drag & Drop не подходит** — нужен Python-сервер (FastAPI + GigaChat).
-
-Инструкция по деплою на **Render** (бесплатный публичный URL): см. [DEPLOY.md](DEPLOY.md).
+**Netlify:** Import from Git (не Drag & Drop). Поля: Build command `true`, Publish directory `app/static`, Functions directory `netlify/functions`. Подробности: [DEPLOY.md](DEPLOY.md).
 

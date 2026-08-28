@@ -1,22 +1,39 @@
 # Как выложить Resume Designer в интернет
 
-## Важно про Netlify
+## Вариант: Netlify (Functions)
 
-**Netlify Drag & Drop не подойдёт для этого проекта.**
+Не используйте **Drag & Drop** — так уедет только HTML, без `/api/v1/chat`.
 
-Туда можно закинуть только статику (HTML/CSS/JS). У нас:
+Подключите репозиторий GitHub: **Add new site → Import an existing project**.
 
-- бэкенд на **Python / FastAPI**;
-- ключи **GigaChat**;
-- API `/api/v1/chat`, PDF, сессии.
+Поля Build settings (или оставьте пустыми — возьмутся из `netlify.toml`):
 
-Без сервера сайт на Netlify откроется, но кнопки «Отправить» работать не будут.
+| Поле | Значение |
+|------|----------|
+| Branch to deploy | `master` |
+| Base directory | пусто |
+| Build command | `true` |
+| Publish directory | `app/static` |
+| Functions directory | `netlify/functions` |
 
-Для полноценного запуска используйте **Render** (ниже) или аналог: Railway, Fly.io.
+В **Site settings → Environment variables** добавьте:
+
+| Ключ | Пример |
+|------|--------|
+| `GIGACHAT_USE_STUB` | `false` |
+| `GIGACHAT_VERIFY_SSL` | `false` |
+| `GIGACHAT_AUTH_KEY` | ваш base64-ключ |
+| `GIGACHAT_CLIENT_ID` | ваш client id |
+| `GIGACHAT_MODEL_LIGHT` | `GigaChat-2` |
+| `GIGACHAT_MODEL_HEAVY` | `GigaChat-2-Pro` |
+
+Deploy → откройте сайт. Проверка API: `https://ВАШ-САЙТ.netlify.app/health`
+
+> На бесплатном плане функция живёт ~10 секунд. Если GigaChat отвечает дольше, запрос оборвётся. Тогда нужен платный план Netlify (таймаут до 26 с) или более быстрая модель.
 
 ---
 
-## Вариант: Render (рекомендуется)
+## Вариант: Render
 
 Бесплатный публичный URL, Docker уже в репозитории.
 

@@ -9,6 +9,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <style>
     :root {
       --bg: #f4f1ec;
@@ -1005,13 +1006,68 @@
       }
     });
 
-    async function extractPdfText(file) {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/v1/resume/pdf", { method: "POST", body: form });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) throw new Error(data?.detail || `Ошибка PDF: ${res.status}`);
+    function formatApiDetail(detail) {
+      if (!detail) return "";
+      if (typeof detail === "string") return detail;
+      if (Array.isArray(detail)) {
+        return detail.map((item) => item.msg || JSON.stringify(item)).join("; ");
+      }
+      return JSON.stringify(detail);
+    }
+
+    async function apiFetch(url, options) {
+      const res = await fetch(url, options);
+      const raw = await res.text();
+      let data = null;
+      if (raw) {
+        try {
+          data = JSON.parse(raw);
+        } catch {
+          data = null;
+        }
+      }
+      if (!res.ok) {
+        if (res.status === 404) {
+          throw new Error(
+            "API не найден (404). Нужен деплой из GitHub с Netlify Functions (не Drag & Drop). После пуша проверьте /health."
+          );
+        }
+        throw new Error(formatApiDetail(data?.detail) || raw.slice(0, 200) || `Ошибка сервера: ${res.status}`);
+      }
+      if (!data) throw new Error("Сервер вернул не JSON");
       return data;
+    }
+
+    async function extractPdfInBrowser(file) {
+      const pdfjsLib = window.pdfjsLib;
+      if (!pdfjsLib) throw new Error("PDF-библиотека не загрузилась");
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      const data = new Uint8Array(await file.arrayBuffer());
+      const pdf = await pdfjsLib.getDocument({ data }).promise;
+      const pages = [];
+      for (let i = 1; i <= Math.min(pdf.numPages, 20); i += 1) {
+        const page = await pdf.getPage(i);
+        const content = await page.getTextContent();
+        pages.push(content.items.map((item) => item.str).join(" "));
+      }
+      const text = pages.join("\n\n").trim();
+      if (!text) throw new Error("В PDF не найден текст (возможно, это скан без OCR)");
+      return { filename: file.name, text, chars: text.length };
+    }
+
+    async function extractPdfText(file) {
+      try {
+        return await extractPdfInBrowser(file);
+      } catch (browserError) {
+        try {
+          const form = new FormData();
+          form.append("file", file);
+          return await apiFetch("/api/v1/resume/pdf", { method: "POST", body: form });
+        } catch {
+          throw browserError;
+        }
+      }
     }
 
     document.getElementById("resumePdf").addEventListener("change", (e) => {
@@ -1087,20 +1143,11 @@
     }
 
     async function callChat(body) {
-      const res = await fetch("/api/v1/chat", {
+      return apiFetch("/api/v1/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-
-      let data = null;
-      try {
-        data = await res.json();
-      } catch (e) {
-        throw new Error(await res.text());
-      }
-      if (!res.ok) throw new Error(data?.detail || `Ошибка сервера: ${res.status}`);
-      return data;
     }
 
     function handleChatResponse(data) {
@@ -1181,14 +1228,11 @@
           answers,
           resume: resumeText ? { raw_text: resumeText } : null,
         };
-        const res = await fetch("/api/v1/interview", {
+        handleChatResponse(await apiFetch("/api/v1/interview", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data?.detail || `Ошибка: ${res.status}`);
-        handleChatResponse(data);
+        }));
       } catch (err) {
         setStatus("Ошибка: " + err.message);
       }
