@@ -16,16 +16,16 @@
 | Publish directory | `app/static` |
 | Functions directory | `netlify/functions` |
 
-В **Site settings → Environment variables** добавьте:
+В **Site settings → Environment variables** добавьте только это. Галочку **Contains secret values** ставьте лишь у ключа.
 
-| Ключ | Пример |
-|------|--------|
-| `GIGACHAT_USE_STUB` | `false` |
-| `GIGACHAT_VERIFY_SSL` | `false` |
-| `GIGACHAT_AUTH_KEY` | ваш base64-ключ |
-| `GIGACHAT_CLIENT_ID` | ваш client id |
-| `GIGACHAT_MODEL_LIGHT` | `GigaChat-2` |
-| `GIGACHAT_MODEL_HEAVY` | `GigaChat-2-Pro` |
+| Ключ | Пример | Contains secret values |
+|------|--------|------------------------|
+| `GIGACHAT_AUTH_KEY` | ваш base64-ключ | да |
+| `GIGACHAT_CLIENT_ID` | ваш client id | нет |
+| `GIGACHAT_USE_STUB` | `false` | нет |
+| `GIGACHAT_VERIFY_SSL` | `false` | нет |
+
+Не добавляйте как secret: `APP_NAME`, `APP_ENV`, `LOG_LEVEL`, `GIGACHAT_MODEL_*`, `GIGACHAT_SCOPE`, `GIGACHAT_API_URL`, `GIGACHAT_AUTH_URL` — это публичные настройки, они уже в коде. Если Netlify уже пометил их как secret и сборка падает — добавьте переменную `SECRETS_SCAN_OMIT_KEYS` (без галочки secret) со списком этих имён через запятую и сделайте Trigger deploy.
 
 Deploy → откройте сайт. Проверка API: `https://ВАШ-САЙТ.netlify.app/health`
 

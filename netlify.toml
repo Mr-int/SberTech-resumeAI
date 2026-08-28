@@ -3,6 +3,10 @@
   publish = "app/static"
   functions = "netlify/functions"
 
+[build.environment]
+  # Это не секреты (имена моделей, URL, APP_NAME). Иначе Netlify падает на secret scan.
+  SECRETS_SCAN_OMIT_KEYS = "APP_NAME,APP_ENV,LOG_LEVEL,GIGACHAT_SCOPE,GIGACHAT_MODEL,GIGACHAT_MODEL_LIGHT,GIGACHAT_MODEL_HEAVY,GIGACHAT_AUTH_URL,GIGACHAT_API_URL,GIGACHAT_USE_STUB,GIGACHAT_VERIFY_SSL,GIGACHAT_CLIENT_ID"
+
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
