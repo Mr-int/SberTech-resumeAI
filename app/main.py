@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 
 from app import __version__
@@ -10,6 +10,7 @@ from app.api.routes import chat, health, interview, session
 from app.core.config import get_settings
 from app.core.logging import setup_logging
 from app.modules.block1_resume_constructor.router import router as block1_router
+from app.services.moderation import ModerationRejected
 
 
 @asynccontextmanager
@@ -37,6 +38,10 @@ def create_app() -> FastAPI:
         allow_methods=["*"],
         allow_headers=["*"],
     )
+
+    @app.exception_handler(ModerationRejected)
+    async def moderation_handler(_request, exc: ModerationRejected) -> JSONResponse:
+        return JSONResponse(status_code=400, content={"detail": str(exc)})
 
     app.include_router(health)
     app.include_router(chat, prefix="/api/v1")

@@ -14,6 +14,9 @@ import httpx
 from app.integrations.gigachat.models import GigaChatCompletionRequest, GigaChatMessage
 from app.services.prompt_service import PromptService
 from app.services.session_store import STORE
+from app.services.moderation import check_chat_request, check_generated_text
+from app.core.config import get_settings
+from app.services.model_router import select_gigachat_model
 
 logger = logging.getLogger(__name__)
 
@@ -112,12 +115,11 @@ class ChatService:
         self._prompts = prompt_service or PromptService()
 
     async def process(self, request: ChatRequest) -> ChatResponse:
+        check_chat_request(request)
+
         intent = self._resume.detect_intent(request)
         resume_context = self._resume.build_resume_context(request)
         resume_text = request.resume.raw_text if request.resume else None
-
-        from app.core.config import get_settings
-        from app.services.model_router import select_gigachat_model
 
         settings = get_settings()
         model_id, model_tier = select_gigachat_model(
@@ -179,6 +181,8 @@ class ChatService:
                 stub=False,
                 debug={"error": str(e)},
             )
+
+        check_generated_text(completion.content)
 
         recommendations = self._resume.parse_recommendations_stub(completion.content)
 

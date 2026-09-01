@@ -1,0 +1,30 @@
+{
+  "categories": {
+    "profanity": "грубая лексика (мат)",
+    "insult": "оскорбление или грубая формулировка",
+    "politics": "политическое высказывание"
+  },
+  "patterns": [
+    {"category": "profanity", "pattern": "(?<![а-яa-z])(?:по|на|за|от|вы|с|у|про|о|об|ни|до|ис)?ху[йиеяю][а-я]*"},
+    {"category": "profanity", "pattern": "(?<![а-яa-z])(?:по|на|за|от|вы|про|раз)?пизд[а-я]*"},
+    {"category": "profanity", "pattern": "(?<![а-яa-z])(?:за|на|от|вы|съ|с|по)?еб(?:ал|ать|ану|уч|лан|лос|ся|аный|аная|альник)[а-я]*"},
+    {"category": "profanity", "pattern": "(?<![а-яa-z])бля(?:дь|ди|дск|дина|т|ть|ток|дский)[а-я]*"},
+    {"category": "profanity", "pattern": "(?<![а-яa-z])(?:по|на)?хер(?![а-я])"},
+    {"category": "profanity", "pattern": "(?<![а-яa-z])(?:fuck|fucking|shit|bitch|asshole|cunt|whore|dickhead)[a-z]*"},
+    {"category": "insult", "pattern": "(?<![а-яa-z])(?:сука|суки|сучар[а-я]*)(?![а-я])"},
+    {"category": "insult", "pattern": "(?<![а-яa-z])(?:мудак|мудил[а-я]*|чмо|мразь|гнида|падла|тварь|урод(?:ина)?)(?![а-я])"},
+    {"category": "insult", "pattern": "(?<![а-яa-z])(?:шлюха|шалава|пидор[а-я]*|пидр[а-я]*|педик|гандон|гондон)(?![а-я])"},
+    {"category": "insult", "pattern": "(?<![а-яa-z])(?:долбоеб|долбоёб|дебил(?:ы|ов|ами)?|кретин(?:ы|ов)?|идиот(?:ы|ов|ка)?|даун(?:ы|ов)?)(?![а-я])"},
+    {"category": "politics", "pattern": "голосуй(?:те)?\\s+за"},
+    {"category": "politics", "pattern": "за\\s+(?:путина|зеленского|навального)\\b"},
+    {"category": "politics", "pattern": "путин\\s*(?:вор|хуйло|молодец|наш|краб)"},
+    {"category": "politics", "pattern": "единая\\s+россия"},
+    {"category": "politics", "pattern": "(?<![а-яa-z])(?:кпрф|лдпр|справедливая\\s+россия)(?![а-я])"},
+    {"category": "politics", "pattern": "навальн[а-я]*"},
+    {"category": "politics", "pattern": "жириновск[а-я]*"},
+    {"category": "politics", "pattern": "спецоперац[а-я]*"},
+    {"category": "politics", "pattern": "(?<![а-яa-z])(?:рашист[а-я]*|укрнаци|либераш[а-я]*)"},
+    {"category": "politics", "pattern": "долой\\s+(?:власть|путина|правительство)"},
+    {"category": "politics", "pattern": "(?:z|з)[\\- ]?войск"}
+  ]
+}

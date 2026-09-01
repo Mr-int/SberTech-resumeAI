@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import { completeChat, getSettings } from "./gigachat.mjs";
 import { SYSTEM_PROMPT, buildUserPrompt } from "./prompts.mjs";
+import { moderateGenerated, moderateRequest } from "./moderation.mjs";
 
 const COMPLEX_INTENTS = new Set(["analyze_resume", "create_resume", "improve_section"]);
 const COMPLEX_KEYWORDS = [
@@ -83,6 +84,13 @@ export async function processChat(body) {
     throw error;
   }
 
+  const blocked = moderateRequest(body);
+  if (blocked) {
+    const error = new Error(blocked);
+    error.status = 400;
+    throw error;
+  }
+
   const intent = detectIntent(body);
   const resumeContext = buildResumeContext(body.resume);
   const resumeText = body.resume?.raw_text || null;
@@ -119,6 +127,13 @@ export async function processChat(body) {
       processed_at: new Date().toISOString(),
       debug: { error: error.message },
     };
+  }
+
+  const blockedOutput = moderateGenerated(completion.content);
+  if (blockedOutput) {
+    const error = new Error(blockedOutput);
+    error.status = 400;
+    throw error;
   }
 
   const followup = completion.content

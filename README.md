@@ -90,5 +90,7 @@ docker-compose up --build
 
 ## Публикация в интернет
 
+**Docker (cloud.ru / VPS):** `docker compose up -d --build` — см. [DEPLOY.md](DEPLOY.md).
+
 **Netlify:** Import from Git (не Drag & Drop). Поля: Build command `true`, Publish directory `app/static`, Functions directory `netlify/functions`. Подробности: [DEPLOY.md](DEPLOY.md).
 

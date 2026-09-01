@@ -43,3 +43,14 @@ async def test_messenger_chat_stub(client):
     assert data["stub"] is True
     assert "reply" in data
     assert "[STUB]" in data["reply"]["text"]
+
+
+@pytest.mark.asyncio
+async def test_messenger_chat_rejects_profanity(client):
+    payload = {"message": {"text": "Составь резюме, я хуй знает кем работать"}}
+    response = await client.post("/api/v1/chat", json=payload)
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert "Модерация" in detail
+    assert "грубая лексика" in detail
+    assert "сообщение" in detail

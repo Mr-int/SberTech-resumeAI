@@ -10,3 +10,4 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  included_files = ["netlify/lib/moderation-rules.json"]

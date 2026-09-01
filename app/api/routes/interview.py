@@ -5,6 +5,7 @@ from uuid import UUID
 from app.api.dependencies import get_chat_service
 from app.domain.models.message import ChatRequest, IncomingMessage, ResumePayload
 from app.services.chat_service import ChatService
+from app.services.moderation import ModerationRejected
 
 router = APIRouter(prefix="/interview", tags=["Interview"])
 
@@ -28,5 +29,7 @@ async def submit_interview(
         response = await service.process(chat_req)
         # return a JSON-serializable dict to satisfy FastAPI response validation
         return response.model_dump()
+    except ModerationRejected as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

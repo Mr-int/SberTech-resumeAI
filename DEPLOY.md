@@ -1,5 +1,51 @@
 # Как выложить Resume Designer в интернет
 
+## Вариант: Docker (cloud.ru и любой VPS)
+
+На сервере нужны Docker и Docker Compose, файл `.env` **не** кладётся в git.
+
+```bash
+git clone https://github.com/Mr-int/SberTech-resumeAI.git
+cd SberTech-resumeAI
+cp .env.example .env
+nano .env
+```
+
+В `.env` для боя:
+
+```
+APP_ENV=production
+GIGACHAT_USE_STUB=false
+GIGACHAT_VERIFY_SSL=false
+GIGACHAT_AUTH_KEY=ваш_ключ
+GIGACHAT_CLIENT_ID=ваш_client_id
+```
+
+Запуск:
+
+```bash
+docker compose up -d --build
+```
+
+Проверка:
+
+- сайт: `http://IP_СЕРВЕРА:8000/` — редирект на `/site/`
+- API: `http://IP_СЕРВЕРА:8000/docs`
+- health: `http://IP_СЕРВЕРА:8000/health`
+
+Логи: `docker compose logs -f`  
+Стоп: `docker compose down`
+
+Если cloud.ru (или nginx) слушает 80 порт:
+
+```bash
+PUBLISH_PORT=80 docker compose up -d --build
+```
+
+Или оставьте `8000` и проксируйте 80/443 на контейнер `resume-designer:8000`.
+
+---
+
 ## Вариант: Netlify (Functions)
 
 Не используйте **Drag & Drop** — так уедет только HTML, без `/api/v1/chat`.

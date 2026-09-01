@@ -542,6 +542,7 @@
       font-size: 0.8125rem;
       margin-bottom: 14px;
       min-height: 1.2em;
+      white-space: pre-wrap;
     }
 
     .status:not(:empty) {
@@ -1713,7 +1714,7 @@
         handleChatResponse(await callChat(body));
       } catch (err) {
         setStatus("Ошибка: " + err.message);
-        setReply("", true);
+        setReply(err.message);
       } finally {
         sendBtn.disabled = false;
       }
@@ -1742,6 +1743,7 @@
         }));
       } catch (err) {
         setStatus("Ошибка: " + err.message);
+        setReply(err.message);
       }
     }
 
